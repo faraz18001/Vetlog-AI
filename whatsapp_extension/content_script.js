@@ -198,21 +198,14 @@ function scanExistingMessages() {
           seenMessages.add(msgId);
           
           const payload = {
+            chat_name: activeChat,
             sender: sender,
             timestamp: timestamp,
-            text: messageText,
-            raw_meta: `[${timestamp}] ${sender}:`
+            text: messageText
           };
 
           console.log(`Capturing in "${activeChat}":`, payload);
           newPayloads.push(payload);
-
-          // Send to Vetlog Backend
-          fetch("http://localhost:8000/webhook/extension/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          }).catch(err => console.log("Backend not reachable yet."));
         }
       }
     } catch (e) {

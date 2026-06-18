@@ -1,36 +1,41 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from schemas import IngestionPayload
+from sqlalchemy.orm import Session
+from app.database import init_db, get_session, RawMessage
+from app.schemas import RawMessageIn
 
-# 1. Initialize the building
-app = FastAPI(title="VetLog EMR API")
+app = FastAPI()
 
-# 2. The Bouncer (CORS Middleware)
-# Browsers strictly block scripts from sending data to random servers. 
-# This tells the browser: "It is okay, I am allowing the Chrome Extension to talk to me."
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allows requests from anywhere (we can lock this down later for security)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 3. The Door (The Endpoint)
-@app.post("/webhook/extension")
-async def ingest_whatsapp_messages(payload: IngestionPayload):
-    # For now, we will just print it to your terminal to prove the connection works.
-    # Later, this is where we will route the data into your LangGraph pipeline and SQLite database.
-    print(f"🔥 [VETLOG BACKEND] Knock knock! Received {len(payload.messages)} messages from the extension.")
-    
-    for msg in payload.messages[:3]: # Print just the first 3 so we don't flood the terminal
-        print(f"   -> {msg}")
-        
-    if len(payload.messages) > 3:
-        print("   -> ... and more.")
 
-    # 4. The Receipt (The Response sent back to the Chrome Extension)
-    return {
-        "status": 200, 
-        "message": f"Backend successfully caught {len(payload.messages)} messages!"
-    }
+@app.on_event("startup")
+def startup():
+    init_db()
+
+
+@app.get("/")
+def root():
+    return {"status": "alive"}
+
+
+@app.post("/webhook/extension/")
+def ingest_message(payload: RawMessageIn, db: Session = Depends(get_session)):
+    msg = RawMessage(
+        chat_name=payload.chat_name,
+        sender=payload.sender,
+        text=payload.text,
+        timestamp=payload.timestamp,
+    )
+    db.add(msg)
+    db.commit()
+    db.refresh(msg)
+
+    print(f"Ingested message #{msg.id}: [{payload.sender}] {payload.text[:60]}")
+    return {"status": "received", "message_id": msg.id}

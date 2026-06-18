@@ -6,8 +6,7 @@
   "permissions": ["storage"],
   "host_permissions": [
     "https://web.whatsapp.com/*",
-    "http://localhost/*",
-    "file:///*"
+    "http://localhost/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -15,11 +14,7 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://web.whatsapp.com/*",
-        "http://localhost/*",
-        "file:///*"
-      ],
+      "matches": ["https://web.whatsapp.com/*"],
       "js": ["content_script.js"]
     }
   ]
