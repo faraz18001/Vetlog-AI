@@ -7,6 +7,12 @@ const seenMessages = new Set();
 let currentChatName = "";
 let isLoadingStorage = false;
 
+// Auto-scrolling state variables (declared at top to prevent ReferenceError TDZ)
+let scrollInterval = null;
+let scanInterval = null;
+let lastScrollHeight = 0;
+let noChangeCount = 0;
+
 // Helper to find the active WhatsApp chat name from the page header
 function getActiveChatName() {
   // Try WhatsApp Web conversation header info container (global search first)
@@ -249,10 +255,6 @@ document.addEventListener('scroll', (event) => {
 }, true);
 
 // 4. Auto-scrolling logic
-let scrollInterval = null;
-let scanInterval = null;
-let lastScrollHeight = 0;
-let noChangeCount = 0;
 
 function getScrollContainer() {
   // Try stable selectors first
