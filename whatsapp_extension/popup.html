@@ -1,44 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
   <style>
-    body { width: 280px; padding: 15px; font-family: system-ui, sans-serif; background: #f0f2f5; margin: 0; }
-    h3 { margin-top: 0; color: #111b21; font-size: 16px; margin-bottom: 15px;}
-    .date-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; color: #111b21; }
-    input[type="date"] { padding: 4px; border: 1px solid #ccc; border-radius: 4px; }
-    button { 
-      width: 100%; padding: 10px; background: #00a884; color: white; 
-      border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 10px;
+    body { width: 300px; padding: 12px; font-family: sans-serif; }
+    h2 { margin: 0 0 8px; font-size: 16px; }
+    #activeChat { font-weight: bold; margin-bottom: 4px; font-size: 13px; color: #007bff; }
+    #count { color: #666; font-size: 13px; margin-bottom: 10px; }
+    button {
+      width: 100%; padding: 10px; font-size: 14px;
+      color: white; border: none;
+      border-radius: 6px; cursor: pointer;
     }
-    button:hover { background: #008f6f; }
-    #status { font-size: 13px; color: #667781; word-wrap: break-word; margin-top: 10px;}
-    hr { border: 0; border-top: 1px solid #ddd; margin: 15px 0; }
+    #scrollBtn { background: #007bff; margin-bottom: 8px; }
+    #scrollBtn:hover { background: #0056b3; }
+    #scrollBtn.scrolling { background: #dc3545; }
+    #scrollBtn.scrolling:hover { background: #bd2130; }
+    #downloadBtn { background: #25D366; }
+    #downloadBtn:hover { background: #1da851; }
+    #clearBtn { background: #6c757d; margin-top: 8px; }
+    #clearBtn:hover { background: #5a6268; }
+    #status { margin-top: 8px; font-size: 12px; color: #333; }
   </style>
 </head>
 <body>
-  <h3>Vetlog EMR Extractor</h3>
-  
-  <div class="date-row">
-    <label>Start Date:</label>
-    <input type="date" id="start-date">
-  </div>
-  <div class="date-row">
-    <label>End Date:</label>
-    <input type="date" id="end-date">
-  </div>
-  <div id="date-warning" style="font-size:11px; color:#667781; margin-bottom:10px; text-align:center;">Leave blank to extract all dates</div>
-
-  <button id="extract-loaded">Extract Visible Chat</button>
-  <button id="extract-all">Auto-Scroll & Extract All</button>
-  
-  <button id="clear-storage" style="background: #d32f2f; color: white;">Clear All Saved Data</button>
-  
-  <hr>
-  <button id="view-storage" style="background: #3b4a54;">View Saved Data Count</button>
-  
-  <div id="status">Ready. Open a chat to begin.</div>
-  
+  <h2>Vetlog Scraper</h2>
+  <div id="activeChat">Active Chat: None</div>
+  <div id="count">Messages captured: 0</div>
+  <button id="scrollBtn">Auto-Scroll Up & Scrape</button>
+  <button id="downloadBtn">Download as TXT</button>
+  <button id="clearBtn">Clear Captured Messages</button>
+  <div id="status"></div>
   <script src="popup.js"></script>
 </body>
 </html>
