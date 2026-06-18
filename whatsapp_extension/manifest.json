@@ -6,15 +6,25 @@
   "permissions": ["storage"],
   "host_permissions": [
     "https://web.whatsapp.com/*",
-    "http://localhost/*"
+    "file:///*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Vetlog Scraper"
   },
   "content_scripts": [
     {
-      "matches": ["https://web.whatsapp.com/*"],
+      "matches": [
+        "https://web.whatsapp.com/*",
+        "file:///*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
       "js": ["content_script.js"]
     }
   ]

@@ -10,6 +10,10 @@ class RawMessageIn(BaseModel):
     timestamp: str
 
 
+class RawMessageBatchIn(BaseModel):
+    messages: list[RawMessageIn]
+
+
 class RawMessageOut(BaseModel):
     id: int
     chat_name: str

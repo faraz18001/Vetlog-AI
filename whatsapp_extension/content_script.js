@@ -328,6 +328,37 @@ function stopAutoScroll() {
     scanInterval = null;
   }
   chrome.storage.local.set({ isScrolling: false });
+
+  // Batch-send all captured messages to backend
+  batchSendToBackend();
+}
+
+function batchSendToBackend() {
+  chrome.storage.local.get(['activeChatName', 'capturedChats'], (result) => {
+    const activeChat = result.activeChatName || "";
+    const chats = result.capturedChats || {};
+    const messages = chats[activeChat] || [];
+
+    if (messages.length === 0) {
+      console.log("Vetlog Scraper: No messages to send.");
+      return;
+    }
+
+    console.log(`Vetlog Scraper: Delegating batch send of ${messages.length} messages for "${activeChat}" to background script...`);
+
+    chrome.runtime.sendMessage({
+      action: "sendBatchToBackend",
+      messages: messages
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("Vetlog Scraper: Communication with background service worker failed:", chrome.runtime.lastError);
+      } else if (response && response.success) {
+        console.log("Vetlog Scraper: Batch successfully ingested to DB:", response.data);
+      } else {
+        console.error("Vetlog Scraper: Batch ingestion failed:", response ? response.error : "Unknown error");
+      }
+    });
+  });
 }
 
 // Listen for messages from the popup
