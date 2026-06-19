@@ -33,13 +33,17 @@ def main():
         if not user_input.strip():
             continue
 
-        response = agent.invoke(
-            {"messages": [{"role": "user", "content": user_input}]},
+        seen = 0
+        for chunk in agent.stream(
+            {"messages": [("user", user_input)]},
             config=config,
-        )
-
-        last_message = response["messages"][-1]
-        print(f"Agent: {last_message.content}\n")
+            stream_mode="values",
+        ):
+            messages = chunk["messages"]
+            for msg in messages[seen:]:
+                msg.pretty_print()
+                seen += 1
+        print()
 
 
 if __name__ == "__main__":

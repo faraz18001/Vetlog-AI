@@ -24,88 +24,29 @@ DB_PATH = _get_db_path()
 
 
 @tool
-def sql_db_list_tables() -> str:
-    """Input is an empty string, output is a comma-separated list of tables in the database."""
-    con = sqlite3.connect(DB_PATH)
-    try:
-        cursor = con.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = [
-            row[0] for row in cursor.fetchall() if not row[0].startswith("sqlite_")
-        ]
-        return ", ".join(tables)
-    finally:
-        con.close()
-
-
-@tool
-def sql_db_schema(table_names: str) -> str:
-    """Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
-    Be sure that the tables actually exist by calling sql_db_list_tables first!
-    Example Input: table1, table2, table3"""
-    con = sqlite3.connect(DB_PATH)
-    try:
-        cursor = con.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        valid_tables = {
-            row[0] for row in cursor.fetchall() if not row[0].startswith("sqlite_")
-        }
-        results = []
-        for table in table_names.split(","):
-            table = table.strip()
-            if table not in valid_tables:
-                results.append(
-                    f"Error: table_names {{{table!r}}} not found in database"
-                )
-                continue
-            cursor.execute(
-                "SELECT sql FROM sqlite_master WHERE type='table' AND name=?;",
-                (table,),
-            )
-            schema_row = cursor.fetchone()
-            if schema_row:
-                results.append(schema_row[0])
-                try:
-                    quoted_table = '"' + table.replace('"', '""') + '"'
-                    cursor.execute(f"SELECT * FROM {quoted_table} LIMIT 3;")
-                    rows = cursor.fetchall()
-                    if rows:
-                        col_names = [
-                            description[0] for description in cursor.description
-                        ]
-                        results.append(
-                            f"/*\n3 rows from {table} table:\n"
-                            + "\t".join(col_names)
-                            + "\n"
-                            + "\n".join("\t".join(str(x) for x in row) for row in rows)
-                            + "\n*/"
-                        )
-                except Exception as e:
-                    results.append(f"Error fetching sample rows: {e}")
-        return "\n\n".join(results)
-    finally:
-        con.close()
-
-
-@tool
-def sql_db_query(query: str) -> str:
-    """Input to this tool is a detailed and correct SQL query, output is a result from the database.
-    If the query is not correct, an error message will be returned.
-    If an error is returned, rewrite the query, check the query, and try again.
-    If you encounter an issue with Unknown column 'xxxx' in 'field list', use sql_db_schema to query the correct table fields."""
+def execute_sql_query(query: str) -> str:
+    """Execute a raw SQL query on the vetlog database and return the results.
+    The database has a single table called 'raw_messages' that stores veterinary group chat messages.
+    Use this tool after you have generated the correct SQL for the user's question.
+    If the query fails, an error message is returned — rewrite and retry."""
     con = sqlite3.connect(DB_PATH)
     try:
         cursor = con.cursor()
         cursor.execute(query)
-        res = cursor.fetchall()
-        return str(res)
+        rows = cursor.fetchall()
+        if not rows:
+            return "No results found."
+        col_names = [description[0] for description in cursor.description]
+        header = "\t".join(col_names)
+        data = "\n".join("\t".join(str(x) for x in row) for row in rows)
+        return f"{header}\n{data}"
     except Exception as e:
         return f"Error: {e}"
     finally:
         con.close()
 
 
-tools = [sql_db_list_tables, sql_db_schema, sql_db_query]
+tools = [execute_sql_query]
 
 
 def get_llm_model():
@@ -150,23 +91,41 @@ def get_llm_model():
 
 
 agent_check_pointer = MemorySaver()
-SYSTEM_PROMPT = """
-You are a SQL expert with a strong attention to detail.
-Double check the {dialect} query for common mistakes, including:
-- Using NOT IN with NULL values
-- Using UNION when UNION ALL should have been used
-- Using BETWEEN for exclusive ranges
-- Data type mismatch in predicates
-- Properly quoting identifiers
-- Using the correct number of arguments for functions
-- Casting to the correct data type
-- Using the proper columns for joins
 
-If there are any of the above mistakes, rewrite the query. If there are no mistakes,
-just reproduce the original query.
+SCHEMA_DESCRIPTION = """
+Table: raw_messages
 
-You will call the appropriate tool to execute the query after running this check.
-""".format(dialect="sqlite")
+Columns:
+  id          INTEGER PRIMARY KEY   — Auto-incrementing message ID
+  chat_name   VARCHAR NOT NULL       — Name of the WhatsApp group chat (e.g. "Vetlog Group", "Vetlog Clinical Group")
+  sender      VARCHAR NOT NULL       — Person who sent the message (e.g. "Dr. Faraz", "Nurse Ali", "Dr. Sarah Jenkins")
+  text        TEXT NOT NULL          — Message content (treatment notes, diagnoses, medication logs, status updates)
+  timestamp   VARCHAR NOT NULL       — Human-readable timestamp (e.g. "5:20 PM, 6/9/2026")
+  captured_at DATETIME               — When the message was ingested into the system
+
+Example rows:
+  id=1   chat_name="Vetlog Group"          sender="Dr. Faraz"        text="Treated the puppy"
+  id=3   chat_name="Vetlog Group"          sender="Dr. Faraz"        text="Yellowish puppy is recovering"
+  id=9   chat_name="Vetlog Clinical Group"  sender="You"              text="Treated Rocky (Dog (German Shepherd)) at 1:00 PM.\nStatus: Treatment log updated.\nDiagnosis: Gastrointestinal Infection.\nOwner: John Smith."
+  id=10  chat_name="Vetlog Clinical Group"  sender="Dr. Sarah Jenkins" text="Administered medication: Metoclopramide to Bella (Dog (Golden Retriever)).\nOwner: Sarah Miller. Dosage: 2 tab(s).\nStatus: Completed successfully."
+"""
+
+SYSTEM_PROMPT = f"""You are a veterinary assistant that answers questions by querying a database of veterinary group chat messages.
+{SCHEMA_DESCRIPTION}
+Follow these steps for every user question:
+
+1. **UNDERSTAND** — Parse the user's natural language question. Identify key entities (animal, symptom, treatment, doctor, date, etc.).
+2. **GENERATE SQL** — Write a SQLite query against the `raw_messages` table that answers the question. Use LIKE for text searches, and consider searching both the `sender` and `text` columns where appropriate.
+3. **EXECUTE** — Call the `execute_sql_query` tool with your generated SQL.
+4. **ANSWER** — Read the results and respond in clear, conversational natural language. If no results match, say so politely.
+
+Guidelines:
+- Always use LIKE with wildcards for fuzzy text matching (e.g. WHERE text LIKE '%yellowish%').
+- Use OR to search multiple columns where relevant (e.g. WHERE sender LIKE '%Faraz%' OR text LIKE '%Faraz%').
+- Use strftime or string comparison on the timestamp column if date filtering is needed.
+- If a query returns an error, fix the SQL and try again.
+- Never make up data — only report what the database returns.
+- Keep answers concise but informative, quoting the relevant message text when appropriate."""
 
 
 def initialize_agent():
