@@ -13,11 +13,13 @@ from app.config import DATABASE_URL
 
 
 def _get_db_path() -> str:
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     parsed = urlparse(DATABASE_URL)
     path = parsed.path
     if path.startswith("/"):
         path = path.lstrip("/")
-    return path or "vetlog.db"
+    resolved = os.path.join(project_root, path) if not os.path.isabs(path) else path
+    return resolved or os.path.join(project_root, "vetlog.db")
 
 
 DB_PATH = _get_db_path()
