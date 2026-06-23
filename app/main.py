@@ -6,6 +6,7 @@ from app.schemas import RawMessageIn, RawMessageBatchIn
 
 app = FastAPI()
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
