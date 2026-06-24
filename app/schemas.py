@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
 
 
 class RawMessageIn(BaseModel):
@@ -12,6 +13,16 @@ class RawMessageIn(BaseModel):
 
 class RawMessageBatchIn(BaseModel):
     messages: list[RawMessageIn]
+
+
+class ChatRequest(BaseModel):
+    message: str
+    thread_id: str = "web-session-default"
+
+
+class ChatResponse(BaseModel):
+    response: str
+    thread_id: str
 
 
 class RawMessageOut(BaseModel):

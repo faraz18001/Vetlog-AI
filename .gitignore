@@ -49,3 +49,8 @@ Thumbs.db
 *.pdf
 *.md
 !project_plan.md
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/

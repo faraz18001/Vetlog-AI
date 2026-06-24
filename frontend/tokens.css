@@ -1,0 +1,80 @@
+/* Hallmark · macrostructure: Chat Workbench · genre: atmospheric · theme: Slate Indigo
+ * tone: utilitarian-atmospheric · anchor hue: indigo oklch(62% 0.22 280)
+ * paper-band: dark (L < 30%) · display-style: geometric-sans (Outfit)
+ * pre-emit critique: P5 H5 E5 S5 R5 V5
+ */
+
+:root {
+    /* ---- Paper & Surface ---- */
+    --color-paper: oklch(12% 0.01 260);
+    --color-surface: oklch(16% 0.012 260);
+    --color-surface-hover: oklch(19% 0.013 260);
+    --color-surface-2: oklch(22% 0.015 260);
+
+    /* ---- Border ---- */
+    --color-border: oklch(100% 0 0 / 0.07);
+    --color-border-strong: oklch(100% 0 0 / 0.14);
+
+    /* ---- Text ---- */
+    --color-text: oklch(91% 0.006 260);
+    --color-text-muted: oklch(56% 0.01 260);
+    --color-text-faint: oklch(36% 0.008 265);
+
+    /* ---- Accent — indigo ---- */
+    --color-accent: oklch(62% 0.22 280);
+    --color-accent-hover: oklch(67% 0.23 280);
+    --color-accent-subtle: oklch(62% 0.22 280 / 0.14);
+    --color-accent-fg: oklch(97% 0.006 280);
+
+    /* ---- Semantic ---- */
+    --color-user-bubble: oklch(20% 0.015 260);
+    --color-focus: oklch(68% 0.23 280);
+    --color-error: oklch(62% 0.2 25);
+    --color-error-subtle: oklch(62% 0.2 25 / 0.12);
+
+    /* ---- Typography ---- */
+    --font-display: "Outfit", sans-serif;
+    --font-body: "Inter", sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
+
+    /* ---- Type scale ---- */
+    --text-xs: 0.6875rem; /* 11px */
+    --text-sm: 0.8125rem; /* 13px */
+    --text-base: 0.9375rem; /* 15px */
+    --text-lg: 1.0625rem; /* 17px */
+    --text-xl: 1.25rem; /* 20px */
+    --text-2xl: 1.5rem; /* 24px */
+    --text-3xl: 2rem; /* 32px */
+
+    /* ---- Spacing — 4pt scale ---- */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+
+    /* ---- Radius ---- */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.625rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius-bubble: 1.25rem;
+    --radius-full: 9999px;
+
+    /* ---- Motion ---- */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+    --ease-in-out: cubic-bezier(0.83, 0, 0.17, 1);
+    --dur-fast: 140ms;
+    --dur-base: 250ms;
+    --dur-slow: 380ms;
+
+    /* ---- Elevation ---- */
+    --shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.35);
+    --shadow-md: 0 4px 14px oklch(0% 0 0 / 0.45);
+}
