@@ -1,6 +1,29 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+function fmt(n) {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
+
+function UsageBadge({ usage }) {
+  const hasCost = usage.cost_usd > 0;
+  return (
+    <div className="usage-badge" aria-label="Token usage">
+      <span title="Input tokens">↑{fmt(usage.input_tokens)}</span>
+      <span className="usage-sep">/</span>
+      <span title="Output tokens">↓{fmt(usage.output_tokens)}</span>
+      {hasCost && (
+        <>
+          <span className="usage-sep">·</span>
+          <span title="Estimated cost" className="usage-cost">
+            ${usage.cost_usd < 0.001 ? "<0.001" : usage.cost_usd.toFixed(4)}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** Individual message row — user or assistant */
 export default function MessageBubble({ message }) {
   const { role, content, isStreaming, isError, timestamp } = message;
@@ -79,6 +102,11 @@ export default function MessageBubble({ message }) {
           <span className="msg-ts" aria-hidden="true">
             {timeLabel}
           </span>
+        )}
+
+        {/* Token usage badge — AI messages only, after streaming ends */}
+        {!isUser && !isStreaming && !isError && message.usage && (
+          <UsageBadge usage={message.usage} />
         )}
       </div>
     </div>

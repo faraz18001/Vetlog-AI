@@ -3,14 +3,50 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.agent import initialize_agent
+from app.config import INPUT_TOKEN_PRICE_PER_1K, OUTPUT_TOKEN_PRICE_PER_1K
 from app.database import RawMessage, get_session, init_db
-from app.schemas import ChatRequest, ChatResponse, RawMessageBatchIn, RawMessageIn
+from app.schemas import (
+    ChatRequest,
+    ChatResponse,
+    RawMessageBatchIn,
+    RawMessageIn,
+    TokenUsage,
+    UsageStats,
+)
 
 app = FastAPI()
 
 # Agent singleton — initialised once at startup so the
 # MemorySaver checkpointer persists across requests.
 _agent = None
+
+# In-memory usage accumulator (resets on server restart).
+_usage = {
+    "total_requests": 0,
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+    "total_tokens": 0,
+    "total_cost_usd": 0.0,
+}
+
+
+def _extract_usage(messages: list) -> TokenUsage:
+    """Sum usage_metadata across every AIMessage in a LangGraph turn."""
+    inp = out = 0
+    for msg in messages:
+        meta = getattr(msg, "usage_metadata", None)
+        if meta:
+            inp += meta.get("input_tokens", 0)
+            out += meta.get("output_tokens", 0)
+    cost = (inp / 1000 * INPUT_TOKEN_PRICE_PER_1K) + (
+        out / 1000 * OUTPUT_TOKEN_PRICE_PER_1K
+    )
+    return TokenUsage(
+        input_tokens=inp,
+        output_tokens=out,
+        total_tokens=inp + out,
+        cost_usd=round(cost, 6),
+    )
 
 
 app.add_middleware(
@@ -46,7 +82,9 @@ def chat_endpoint(payload: ChatRequest):
         config=config,
     )
 
-    last = result["messages"][-1]
+    messages = result["messages"]
+    last = messages[-1]
+
     # content can be str or list[dict] on newer LangChain builds
     content = last.content
     if not isinstance(content, str):
@@ -54,7 +92,34 @@ def chat_endpoint(payload: ChatRequest):
             part if isinstance(part, str) else part.get("text", "") for part in content
         )
 
-    return ChatResponse(response=content, thread_id=payload.thread_id)
+    usage = _extract_usage(messages)
+
+    # Accumulate session stats
+    _usage["total_requests"] += 1
+    _usage["total_input_tokens"] += usage.input_tokens
+    _usage["total_output_tokens"] += usage.output_tokens
+    _usage["total_tokens"] += usage.total_tokens
+    _usage["total_cost_usd"] += usage.cost_usd
+
+    print(
+        f"[usage] req #{_usage['total_requests']} "
+        f"in={usage.input_tokens} out={usage.output_tokens} "
+        f"cost=${usage.cost_usd:.6f} | "
+        f"session total=${_usage['total_cost_usd']:.4f}"
+    )
+
+    return ChatResponse(response=content, thread_id=payload.thread_id, usage=usage)
+
+
+@app.get("/usage/", response_model=UsageStats)
+def usage_stats():
+    """Cumulative token + cost stats since last server start."""
+    return UsageStats(
+        **_usage,
+        pricing_configured=(
+            INPUT_TOKEN_PRICE_PER_1K > 0 or OUTPUT_TOKEN_PRICE_PER_1K > 0
+        ),
+    )
 
 
 @app.post("/webhook/extension/")

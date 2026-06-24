@@ -20,9 +20,26 @@ class ChatRequest(BaseModel):
     thread_id: str = "web-session-default"
 
 
+class TokenUsage(BaseModel):
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+    cost_usd: float = 0.0  # 0.0 means pricing not configured
+
+
 class ChatResponse(BaseModel):
     response: str
     thread_id: str
+    usage: TokenUsage | None = None
+
+
+class UsageStats(BaseModel):
+    total_requests: int
+    total_input_tokens: int
+    total_output_tokens: int
+    total_tokens: int
+    total_cost_usd: float
+    pricing_configured: bool
 
 
 class RawMessageOut(BaseModel):
