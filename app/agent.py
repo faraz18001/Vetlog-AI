@@ -33,11 +33,14 @@ Rules:
 - If SQL errors, fix and retry.
 - Keep answers short and conversational.
 - For report requests: query data first, then call generate_report.
+- IMPORTANT: When you call generate_report, do NOT repeat the data in your
+  text reply. The UI already shows the report as a preview card. Just confirm
+  in one sentence that the report is ready (e.g. "Your attendance report is ready.").
 
 Examples:
 - Q: "Did Dr. Faraz treat Max?" → SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'
 - Q: "Total donations from Mrs. Fatima" → SELECT text FROM raw_messages WHERE text LIKE '%Mrs. Fatima%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'
-- Q: "Generate a donation report" → query donations, then call generate_report(report_type='donation_ledger', ...)"""
+- Q: "Generate a donation report" → query donations, then call generate_report(report_type='donation_ledger', ...), then reply with one sentence only."""
 
 
 def build_ollama_model(base_url: str, model_name: str, api_key: str):

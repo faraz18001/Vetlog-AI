@@ -1,5 +1,8 @@
+import os
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from app.agent import initialize_agent
@@ -13,6 +16,7 @@ from app.schemas import (
     TokenUsage,
     UsageStats,
 )
+from app.tools import REPORTS_DIR
 
 app = FastAPI()
 
@@ -168,12 +172,156 @@ def chat_endpoint(payload: ChatRequest):
     response_text = extract_content(last_message)
     usage = extract_usage(messages)
     accumulate_usage(usage)
+    report_path = find_report_path(messages)
 
     return ChatResponse(
         response=response_text,
         thread_id=payload.thread_id,
         usage=usage,
+        report_path=report_path,
     )
+
+
+def find_report_path(messages: list) -> str | None:
+    """
+    Scan the agent's message list for a ToolMessage that contains a report path.
+
+    When the agent calls generate_report, LangGraph stores the tool's return
+    value in a ToolMessage. The return value is always 'reports/<filename>.md',
+    so we look for exactly that pattern.
+
+    Args:
+        messages: The full message list returned by agent.invoke().
+
+    Returns:
+        The report path string (e.g. 'reports/daily_summary_2025-06-25.md')
+        or None if no report was generated this turn.
+    """
+    for message in messages:
+        # ToolMessages carry the raw return value of each tool call.
+        class_name = type(message).__name__
+        if class_name != "ToolMessage":
+            continue
+
+        content = getattr(message, "content", "")
+        if (
+            isinstance(content, str)
+            and content.startswith("reports/")
+            and content.endswith(".md")
+        ):
+            return content
+
+    return None
+
+
+@app.get("/reports/{filename}")
+def get_report_content(filename: str):
+    """
+    Return the markdown content of a saved report as JSON.
+
+    The frontend fetches this to render an inline preview inside the chat.
+
+    Args:
+        filename: The report's base filename (e.g. 'daily_summary_2025-06-25.md').
+    """
+    filepath = os.path.join(REPORTS_DIR, filename)
+
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="Report not found.")
+
+    with open(filepath, "r") as f:
+        content = f.read()
+
+    return {"filename": filename, "content": content}
+
+
+@app.get("/reports/{filename}/export", response_class=HTMLResponse)
+def export_report_html(filename: str):
+    """
+    Return the report as a styled, print-ready HTML page.
+
+    The frontend opens this in a new browser tab. The page is styled with
+    print CSS so the user can press Ctrl+P → Save as PDF to get a clean PDF
+    without requiring any server-side PDF library.
+
+    Args:
+        filename: The report's base filename (e.g. 'daily_summary_2025-06-25.md').
+    """
+    filepath = os.path.join(REPORTS_DIR, filename)
+
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="Report not found.")
+
+    with open(filepath, "r") as f:
+        md_content = f.read()
+
+    try:
+        import markdown as md_lib
+
+        body_html = md_lib.markdown(md_content, extensions=["tables", "fenced_code"])
+    except ImportError:
+        # If the markdown library isn't installed, wrap the raw text in a <pre>.
+        body_html = f"<pre>{md_content}</pre>"
+
+    report_title = filename.replace("_", " ").replace(".md", "").title()
+
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>{report_title}</title>
+      <style>
+        body {{
+          font-family: 'Segoe UI', Arial, sans-serif;
+          max-width: 820px;
+          margin: 48px auto;
+          padding: 0 24px;
+          color: #1a1a1a;
+          line-height: 1.7;
+        }}
+        h1, h2, h3 {{ font-weight: 600; margin-top: 1.5em; }}
+        h2 {{ font-size: 1.5rem; border-bottom: 2px solid #e5e5e5; padding-bottom: 8px; }}
+        h3 {{ font-size: 1.15rem; }}
+        table {{
+          width: 100%;
+          border-collapse: collapse;
+          margin: 1.25em 0;
+          font-size: 0.9rem;
+        }}
+        th {{
+          background: #f4f4f5;
+          font-weight: 600;
+          text-align: left;
+          padding: 10px 14px;
+          border: 1px solid #d4d4d8;
+        }}
+        td {{
+          padding: 8px 14px;
+          border: 1px solid #e4e4e7;
+          vertical-align: top;
+        }}
+        tr:nth-child(even) td {{ background: #fafafa; }}
+        hr {{ border: none; border-top: 1px solid #e5e5e5; margin: 2em 0; }}
+        em {{ color: #71717a; font-size: 0.875rem; }}
+        code {{ background: #f4f4f5; padding: 2px 6px; border-radius: 4px; }}
+        @media print {{
+          body {{ margin: 24px; }}
+          @page {{ margin: 2cm; }}
+        }}
+      </style>
+    </head>
+    <body>
+      {body_html}
+      <script>
+        // Auto-open the print dialog so the user can save directly as PDF.
+        window.onload = function() {{ window.print(); }};
+      </script>
+    </body>
+    </html>
+    """
+
+    return HTMLResponse(content=html)
 
 
 @app.get("/usage/", response_model=UsageStats)

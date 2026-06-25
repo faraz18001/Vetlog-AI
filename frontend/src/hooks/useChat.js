@@ -58,6 +58,7 @@ export function useChat() {
         isStreaming: true,
         isError: false,
         usage: null,
+        reportPath: null,
       };
 
       setMessages((prev) => [...prev, userMsg, aiMsg]);
@@ -85,12 +86,17 @@ export function useChat() {
             ? data.response
             : JSON.stringify(data.response);
 
-        // Attach usage metadata before typeout so it's visible once done
-        if (data.usage) {
+        // Attach usage and report metadata before typeout so they're visible once done.
+        if (data.usage || data.report_path) {
           setMessages((prev) =>
-            prev.map((m) =>
-              m.id === aiMsgId ? { ...m, usage: data.usage } : m,
-            ),
+            prev.map((m) => {
+              if (m.id !== aiMsgId) return m;
+              return {
+                ...m,
+                usage: data.usage ?? m.usage,
+                reportPath: data.report_path ?? null,
+              };
+            }),
           );
         }
 

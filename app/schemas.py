@@ -31,6 +31,7 @@ class ChatResponse(BaseModel):
     response: str
     thread_id: str
     usage: TokenUsage | None = None
+    report_path: str | None = None  # e.g. 'reports/daily_summary_2025-06-25_title.md'
 
 
 class UsageStats(BaseModel):

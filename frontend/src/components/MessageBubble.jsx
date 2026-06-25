@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import ReportCard from "./ReportCard.jsx";
 
 function fmt(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
@@ -102,6 +103,11 @@ export default function MessageBubble({ message }) {
           <span className="msg-ts" aria-hidden="true">
             {timeLabel}
           </span>
+        )}
+
+        {/* Report card — shown when the agent generated a report this turn */}
+        {!isUser && !isStreaming && !isError && message.reportPath && (
+          <ReportCard reportPath={message.reportPath} />
         )}
 
         {/* Token usage badge — AI messages only, after streaming ends */}
