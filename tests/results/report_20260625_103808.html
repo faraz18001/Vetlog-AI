@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Agent Stress Test Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1200px; margin: 40px auto; padding: 0 20px; background: #f5f5f5; }
+  h1 { color: #333; }
+  .summary { display: flex; gap: 20px; margin: 20px 0; }
+  .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex: 1; }
+  .card h2 { margin: 0 0 10px; font-size: 14px; color: #666; text-transform: uppercase; }
+  .card .value { font-size: 36px; font-weight: bold; }
+  .pass .value { color: #22c55e; }
+  .fail .value { color: #ef4444; }
+  .warn .value { color: #f59e0b; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+  th { background: #f8f8f8; font-size: 12px; text-transform: uppercase; color: #666; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-pass { background: #dcfce7; color: #166534; }
+  .badge-fail { background: #fef2f2; color: #991b1b; }
+  .badge-hallucinate { background: #fff3cd; color: #856404; }
+  .badge-error { background: #f8d7da; color: #721c24; }
+  .detail { font-size: 12px; color: #666; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tr:hover { background: #f9f9f9; }
+</style>
+</head>
+<body>
+<h1>🧪 Agent Stress Test Report</h1>
+<p>Generated: 2026-06-25 10:38</p>
+
+<div class="summary">
+  <div class="card pass"><h2>SQL Pass Rate</h2><div class="value">28/32</div></div>
+  <div class="card warn"><h2>Hallucinations</h2><div class="value">19</div></div>
+  <div class="card fail"><h2>Errors</h2><div class="value">1</div></div>
+  <div class="card"><h2>Total Tests</h2><div class="value">32</div></div>
+</div>
+
+<table>
+<tr>
+  <th>ID</th><th>Question</th><th>Difficulty</th><th>SQL</th><th>Hallucination</th><th>Tool Calls</th><th>SQL Agent Generated</th>
+</tr>
+<tr>
+  <td><strong>D1</strong></td>
+  <td style="max-width: 300px;">Did Dr. Faraz treat a dog named Max?</td>
+  <td>easy</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>1</td>
+  <td class="detail">SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE sender LIK</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 21 | Agent answer: Yes – Dr. Faraz has treated a dog named **Max** on numerous occasions.  
+Some of the messages that m
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>D2</strong></td>
+  <td style="max-width: 300px;">What did Nurse Ali administer to Coco?</td>
+  <td>easy</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>2</td>
+  <td class="detail">SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE sender LIK</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 25 | Agent answer: Nurse Ali has given Coco (the parrot) several medications over the past months. Here’s a quick rundo
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>D3</strong></td>
+  <td style="max-width: 300px;">Was there a donation from Paws Welfare Trust?</td>
+  <td>easy</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>3</td>
+  <td class="detail">SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE </td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 39 | Agent answer: Yes – the clinic has received several donations from **Paws Welfare Trust**.  
+Here are a few repres
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>D4</strong></td>
+  <td style="max-width: 300px;">Which animals were checked in by Receptionist Sara?</td>
+  <td>easy</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>5</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Receptionist Sa</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 53 | Agent answer: **Animals that Receptionist Sara logged as “checked in”**
+
+- Luna  
+- Chloe (Cat (Persian))  
+- Char
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>D5</strong></td>
+  <td style="max-width: 300px;">Who was on duty at 10:00 AM?</td>
+  <td>easy</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>6</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%on duty%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 7 | Agent answer: **People who were on duty at 10:00 AM (according to the chat logs)**  
+
+| Date | On‑duty staff | Sou
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>S1</strong></td>
+  <td style="max-width: 300px;">Has any animal been treated for jaundice?</td>
+  <td>medium</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>7</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%jaundice%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 97 | Agent answer: Yes – several animals have been treated for jaundice.  
+Here are a few representative cases from the
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>S2</strong></td>
+  <td style="max-width: 300px;">Did anyone treat a German Shepherd named Rocky?</td>
+  <td>medium</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>8</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Rocky%' AND text </td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 147 | Agent answer: Yes – Rocky the German Shepherd has been treated on many occasions.  
+Here are a few representative 
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>S3</strong></td>
+  <td style="max-width: 300px;">Which doctor treated the Golden Retriever?</td>
+  <td>medium</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>9</td>
+  <td class="detail">SELECT id, timestamp, sender, text FROM raw_messages WHERE text LIKE '%Golden Re</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 7 | Agent answer: **Doctors who have treated a Golden Retriever (any of the dogs in the logs)**  
+
+| Doctor | Example 
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>S4</strong></td>
+  <td style="max-width: 300px;">Was any surgery done on a Labrador?</td>
+  <td>medium</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>10</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Labrador%' AND (t</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 3 | Agent answer: Yes – a Labrador has undergone surgery on a few occasions.  
+The chat logs show:
+
+| Date & Time | Ow
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>T1</strong></td>
+  <td style="max-width: 300px;">How many patients were discharged after kidney disease treatment?</td>
+  <td>medium</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>11</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%discharged%' AND </td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 3 | Agent answer: Three patients were discharged after kidney‑disease treatment:
+
+| Patient | Date & Time | Notes |
+|-
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>T2</strong></td>
+  <td style="max-width: 300px;">Who checked in a dog named Charlie and what was it for?</td>
+  <td>medium</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>12</td>
+  <td class="detail">SELECT id, timestamp, sender, text FROM raw_messages WHERE text LIKE '%Charlie%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 22 | Agent answer: **Check‑ins for the Labrador “Charlie”**
+
+| Date & Time | Who checked him in | Reason |
+|-----------
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>T3</strong></td>
+  <td style="max-width: 300px;">Which animals were kept overnight for monitoring?</td>
+  <td>medium</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-error">ERROR</span></td>
+  <td>12</td>
+  <td class="detail">SELECT id, timestamp, sender, text FROM raw_messages WHERE text LIKE '%Charlie%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 20 | Agent answer: **Check‑ins for the Labrador “Charlie”**
+
+| Date & Time | Who checked him in | Reason |
+|-----------
+     | Error: RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)
+  </td>
+</tr>
+<tr>
+  <td><strong>M1</strong></td>
+  <td style="max-width: 300px;">Was there a donation specified for Buddy's treatment?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>14</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Buddy%' AND text </td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 9 | Agent answer: **Animals kept overnight for monitoring**
+
+| Animal | Date & Time | Status |
+|--------|-------------
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>M2</strong></td>
+  <td style="max-width: 300px;">What did the blood work show for any animal?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>15</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%blood work%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 58 | Agent answer: **Blood‑work results (selected highlights)**  
+
+| Animal | Date | Result |
+|--------|------|--------
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>M3</strong></td>
+  <td style="max-width: 300px;">Did Dr. Faraz treat any animal from Mr. Ahmed Khan?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>18</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Faraz%' AND tex</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 2 | Agent answer: **Answer**
+
+No.  
+In the chat logs, there are no messages from **Dr. Faraz** that mention an animal 
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>M4</strong></td>
+  <td style="max-width: 300px;">Which animals have X-ray results recorded?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>20</td>
+  <td class="detail">SELECT DISTINCT SUBSTRING(text, INSTR(text, 'X-ray results for') + 17, 50) AS an</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 71 | Agent answer: **Animals that have X‑ray results recorded in the chat logs**
+
+- Rocky  
+- Cooper  
+- Shadow  
+- Bud
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>R1</strong></td>
+  <td style="max-width: 300px;">Did Dr. Ahmed treat a brown dog for anemia?</td>
+  <td>hard</td>
+  <td><span class="badge badge-fail">FAIL</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>23</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Ahmed%' AND tex</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 0 | Agent answer: No.  
+The database contains no message from **Dr. Ahmed** that mentions a “brown dog” being treated 
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>R2</strong></td>
+  <td style="max-width: 300px;">Who covered for Dr. Faraz when he signed off early?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>26</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Faraz signed off%</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 21 | Agent answer: **Who covered for Dr. Faraz when he signed off early**
+
+| Date & Time | Dr. Faraz signed off | Cover
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>R3</strong></td>
+  <td style="max-width: 300px;">Did Dr. Sarah Jenkins treat a Persian cat named Lucy?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>28</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Sarah Jenkins%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 20 | Agent answer: Yes.  Several messages from **Dr. Sarah Jenkins** show that she treated the Persian‑cat *Lucy*:
+
+| D
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>RC1</strong></td>
+  <td style="max-width: 300px;">Is there a cat named Simba that was treated recently?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>31</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Simba%' AND times</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 5 | Agent answer: Yes – the clinic has treated **Simba** (a Siamese cat) very recently.  
+
+| Date | Treatment / Event 
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>RC2</strong></td>
+  <td style="max-width: 300px;">What is the latest status of the animal named Charlie?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>34</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Charlie%' ORDER B</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 1 | Agent answer: **Latest status of Charlie (Dog (Labrador))**
+
+- **5 May 2026, 9:58 AM** – “Charlie's X‑ray came bac
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>A1</strong></td>
+  <td style="max-width: 300px;">Which doctors did NOT check in any patient yesterday?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>37</td>
+  <td class="detail">SELECT DISTINCT sender FROM raw_messages WHERE timestamp LIKE '%, 6/24/2026'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 4 | Agent answer: On **24 June 2026** the only check‑in message was from **Nurse Ali** (Simba).  
+None of the doctors 
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>A2</strong></td>
+  <td style="max-width: 300px;">How many donations were made by Mr. Usman?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>39</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%donation%' AND te</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 1 | Agent answer: Mr. Usman made **10** donations in the chat logs.
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>A3</strong></td>
+  <td style="max-width: 300px;">Was there any animal treated for heartworm by Dr. Faraz?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>41</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Faraz%' AND tex</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 8 | Agent answer: No.  
+All heartworm‑related entries in the logs are authored by other staff (e.g., Dr. Sarah Jenkins
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>CX1</strong></td>
+  <td style="max-width: 300px;">Did Al-Khidmat Foundation donate for a specific animal's surgery?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>43</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Al-Khidmat Founda</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 12 | Agent answer: Yes.  The Al‑Khidmat Foundation has donated specifically for several animals’ surgeries.  The most r
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>CX2</strong></td>
+  <td style="max-width: 300px;">What was the total donation amount from Mrs. Fatima?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>45</td>
+  <td class="detail">SELECT SUM(CAST(SUBSTR(text, INSTR(text, 'PKR')+4, 10) AS INTEGER)) AS total FRO</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 30 | Agent answer: **Total donation from Mrs. Fatima**
+
+The chat logs show a cumulative donation of **PKR 523,000** fro
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>CX3</strong></td>
+  <td style="max-width: 300px;">Which doctor handled the most cases on duty?</td>
+  <td>hard</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-pass">CLEAN</span></td>
+  <td>46</td>
+  <td class="detail">SELECT sender, SUM(CAST(SUBSTR(text, INSTR(text, 'Cases:') + 7, 10) AS INTEGER))</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 5 | Agent answer: 
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>E1</strong></td>
+  <td style="max-width: 300px;">Was anyone treated for Parvo in the clinic?</td>
+  <td>easy</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>48</td>
+  <td class="detail">SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%Parvo%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 68 | Agent answer: **Yes – several animals were treated for Parvo in the clinic.**  
+The following animals had Parvo‑re
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>E2</strong></td>
+  <td style="max-width: 300px;">Is there a rabbit named Oreo in the system?</td>
+  <td>easy</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>48</td>
+  <td class="detail">SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%Parvo%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 90 | Agent answer: Yes.  The chat logs contain several entries for a rabbit named **Oreo**.  For example:
+
+- “Oreo (Rab
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>E3</strong></td>
+  <td style="max-width: 300px;">Did anyone donate 50,000 PKR?</td>
+  <td>easy</td>
+  <td><span class="badge badge-pass">PASS</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>50</td>
+  <td class="detail">SELECT COUNT(*) FROM raw_messages WHERE text LIKE '%PKR 50000%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 31 | Agent answer: Yes – the clinic has received **31 separate donations of PKR 50 000** (or 50,000 PKR).  
+These were 
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>H1</strong></td>
+  <td style="max-width: 300px;">Has a hamster or iguana ever been treated at this clinic?</td>
+  <td>hard</td>
+  <td><span class="badge badge-fail">FAIL</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>51</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%hamster%' OR text</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 0 | Agent answer: No.  The chat logs do not contain any mention of a hamster or an iguana being treated at the clinic.
+    
+  </td>
+</tr>
+<tr>
+  <td><strong>H2</strong></td>
+  <td style="max-width: 300px;">Was there any case of rabies reported in the clinic?</td>
+  <td>hard</td>
+  <td><span class="badge badge-fail">FAIL</span></td>
+  <td><span class="badge badge-hallucinate">⚠️ HALLUCINATED</span></td>
+  <td>52</td>
+  <td class="detail">SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%rabies%'</td>
+</tr>
+<tr style="background: #fafafa;">
+  <td colspan="7" style="padding: 4px 16px; font-size: 11px; color: #999;">
+    Gold rows: 0 | Agent answer: No.  There are no records in the chat logs indicating that a case of rabies was reported or treated 
+    
+  </td>
+</tr>
+</table></body></html>

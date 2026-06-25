@@ -1,0 +1,251 @@
+nohup: ignoring input
+Traceback (most recent call last):
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 127, in __iter__
+    for part in self._httpcore_stream:
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpcore/_sync/connection_pool.py", line 407, in __iter__
+    raise exc from None
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpcore/_sync/connection_pool.py", line 403, in __iter__
+    for part in self._stream:
+                ^^^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpcore/_sync/http11.py", line 342, in __iter__
+    raise exc
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpcore/_sync/http11.py", line 334, in __iter__
+    for chunk in self._connection._receive_response_body(**kwargs):
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpcore/_sync/http11.py", line 203, in _receive_response_body
+    event = self._receive_event(timeout=timeout)
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpcore/_sync/http11.py", line 213, in _receive_event
+    with map_exceptions({h11.RemoteProtocolError: RemoteProtocolError}):
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/syedfaraz/Projects/Vetlog/tests/test_agent.py", line 65, in run_test
+    for chunk in agent.stream(
+                 ~~~~~~~~~~~~^
+        {"messages": [("user", result["question"])]},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        config=config,
+        ^^^^^^^^^^^^^^
+        stream_mode="values",
+        ^^^^^^^^^^^^^^^^^^^^^
+    ):
+    ^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langgraph/pregel/main.py", line 2982, in stream
+    for _ in runner.tick(
+             ~~~~~~~~~~~^
+        [t for t in loop.tasks.values() if not t.writes],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        schedule_task=loop.accept_push,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ):
+    ^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langgraph/pregel/_runner.py", line 207, in tick
+    run_with_retry(
+    ~~~~~~~~~~~~~~^
+        t,
+        ^^
+    ...<10 lines>...
+        },
+        ^^
+    )
+    ^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langgraph/pregel/_retry.py", line 617, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langgraph/_internal/_runnable.py", line 684, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langgraph/_internal/_runnable.py", line 419, in invoke
+    ret = context.run(self.func, *args, **kwargs)
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langgraph/prebuilt/chat_agent_executor.py", line 679, in call_model
+    response = cast(AIMessage, static_model.invoke(model_input, config))  # type: ignore[union-attr]
+                               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_core/runnables/base.py", line 3444, in invoke
+    input_ = context.run(step.invoke, input_, config)
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_core/runnables/base.py", line 6004, in invoke
+    return self.bound.invoke(
+           ~~~~~~~~~~~~~~~~~^
+        input,
+        ^^^^^^
+        self._merge_configs(config),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        **{**self.kwargs, **kwargs},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_core/language_models/chat_models.py", line 476, in invoke
+    self.generate_prompt(
+    ~~~~~~~~~~~~~~~~~~~~^
+        [self._convert_input(input)],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    ).generations[0][0],
+    ^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_core/language_models/chat_models.py", line 1849, in generate_prompt
+    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_core/language_models/chat_models.py", line 1656, in generate
+    self._generate_with_cache(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        m,
+        ^^
+    ...<2 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_core/language_models/chat_models.py", line 1994, in _generate_with_cache
+    result = self._generate(
+        messages, stop=stop, run_manager=run_manager, **kwargs
+    )
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_ollama/chat_models.py", line 1200, in _generate
+    final_chunk = self._chat_stream_with_aggregation(
+        messages, stop, run_manager, verbose=self.verbose, **kwargs
+    )
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_ollama/chat_models.py", line 1135, in _chat_stream_with_aggregation
+    for chunk in self._iterate_over_stream(messages, stop, **kwargs):
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_ollama/chat_models.py", line 1224, in _iterate_over_stream
+    for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
+                       ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/langchain_ollama/chat_models.py", line 1122, in _create_chat_stream
+    yield from self._client.chat(**chat_params)
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/ollama/_client.py", line 191, in inner
+    for line in r.iter_lines():
+                ~~~~~~~~~~~~^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpx/_models.py", line 929, in iter_lines
+    for text in self.iter_text():
+                ~~~~~~~~~~~~~~^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpx/_models.py", line 916, in iter_text
+    for byte_content in self.iter_bytes():
+                        ~~~~~~~~~~~~~~~^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpx/_models.py", line 897, in iter_bytes
+    for raw_bytes in self.iter_raw():
+                     ~~~~~~~~~~~~~^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpx/_models.py", line 951, in iter_raw
+    for raw_stream_bytes in self.stream:
+                            ^^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpx/_client.py", line 153, in __iter__
+    for chunk in self._stream:
+                 ^^^^^^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 126, in __iter__
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/syedfaraz/Projects/Vetlog/.venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)
+During task with name 'agent' and id '44dc3a60-3eca-804f-fe3a-352f63bcc149'
+Loading agent...
+[1/32] Testing: D1 — Did Dr. Faraz treat a dog named Max?...
+  ✅ SQL=PASS Hal=✅ Calls=1
+  SQL: SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE sender LIKE '%Faraz%' AND text
+[2/32] Testing: D2 — What did Nurse Ali administer to Coco?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=2
+  SQL: SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE sender LIKE '%Nurse Ali%' AND 
+[3/32] Testing: D3 — Was there a donation from Paws Welfare Trust?...
+  ✅ SQL=PASS Hal=✅ Calls=3
+  SQL: SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Paws Welfare Trust
+[4/32] Testing: D4 — Which animals were checked in by Receptionist Sara?...
+  ✅ SQL=PASS Hal=✅ Calls=5
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Receptionist Sara%' AND (text LIKE 
+[5/32] Testing: D5 — Who was on duty at 10:00 AM?...
+  ✅ SQL=PASS Hal=✅ Calls=6
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%on duty%'
+[6/32] Testing: S1 — Has any animal been treated for jaundice?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=7
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%jaundice%'
+[7/32] Testing: S2 — Did anyone treat a German Shepherd named Rocky?...
+  ✅ SQL=PASS Hal=✅ Calls=8
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Rocky%' AND text LIKE '%German Shephe
+[8/32] Testing: S3 — Which doctor treated the Golden Retriever?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=9
+  SQL: SELECT id, timestamp, sender, text FROM raw_messages WHERE text LIKE '%Golden Retriever%' AND (text 
+[9/32] Testing: S4 — Was any surgery done on a Labrador?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=10
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Labrador%' AND (text LIKE '%surgery%'
+[10/32] Testing: T1 — How many patients were discharged after kidney disease treat...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=11
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%discharged%' AND text LIKE '%kidney d
+[11/32] Testing: T2 — Who checked in a dog named Charlie and what was it for?...
+  ✅ SQL=PASS Hal=✅ Calls=12
+  SQL: SELECT id, timestamp, sender, text FROM raw_messages WHERE text LIKE '%Charlie%' AND (text LIKE '%ch
+[12/32] Testing: T3 — Which animals were kept overnight for monitoring?...
+  ✅ SQL=PASS Hal=✅ Calls=12
+  SQL: SELECT id, timestamp, sender, text FROM raw_messages WHERE text LIKE '%Charlie%' AND (text LIKE '%ch
+[13/32] Testing: M1 — Was there a donation specified for Buddy's treatment?...
+  ✅ SQL=PASS Hal=✅ Calls=14
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Buddy%' AND text LIKE '%donation%'
+[14/32] Testing: M2 — What did the blood work show for any animal?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=15
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%blood work%'
+[15/32] Testing: M3 — Did Dr. Faraz treat any animal from Mr. Ahmed Khan?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=18
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Ahmed Khan%
+[16/32] Testing: M4 — Which animals have X-ray results recorded?...
+  ✅ SQL=PASS Hal=✅ Calls=20
+  SQL: SELECT DISTINCT SUBSTRING(text, INSTR(text, 'X-ray results for') + 17, 50) AS animal FROM raw_messag
+[17/32] Testing: R1 — Did Dr. Ahmed treat a brown dog for anemia?...
+  ❌ SQL=FAIL Hal=⚠️ Calls=23
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Ahmed%' AND text LIKE '%brown dog%'
+[18/32] Testing: R2 — Who covered for Dr. Faraz when he signed off early?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=26
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Faraz signed off%'
+[19/32] Testing: R3 — Did Dr. Sarah Jenkins treat a Persian cat named Lucy?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=28
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Sarah Jenkins%' AND text LIKE '%Luc
+[20/32] Testing: RC1 — Is there a cat named Simba that was treated recently?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=31
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Simba%' AND timestamp >= '6/1/2026' O
+[21/32] Testing: RC2 — What is the latest status of the animal named Charlie?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=34
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Charlie%' ORDER BY timestamp DESC LIM
+[22/32] Testing: A1 — Which doctors did NOT check in any patient yesterday?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=37
+  SQL: SELECT DISTINCT sender FROM raw_messages WHERE timestamp LIKE '%, 6/24/2026'
+[23/32] Testing: A2 — How many donations were made by Mr. Usman?...
+  ✅ SQL=PASS Hal=✅ Calls=39
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%donation%' AND text LIKE '%Usman%'
+[24/32] Testing: A3 — Was there any animal treated for heartworm by Dr. Faraz?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=41
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%heartworm%'
+[25/32] Testing: CX1 — Did Al-Khidmat Foundation donate for a specific animal's sur...
+  ✅ SQL=PASS Hal=✅ Calls=43
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%Al-Khidmat Foundation%' AND text LIKE
+[26/32] Testing: CX2 — What was the total donation amount from Mrs. Fatima?...
+  ✅ SQL=PASS Hal=✅ Calls=45
+  SQL: SELECT SUM(CAST(SUBSTR(text, INSTR(text, 'PKR')+4, 10) AS INTEGER)) AS total FROM raw_messages WHERE
+[27/32] Testing: CX3 — Which doctor handled the most cases on duty?...
+  ✅ SQL=PASS Hal=✅ Calls=46
+  SQL: SELECT sender, SUM(CAST(SUBSTR(text, INSTR(text, 'Cases:') + 7, 10) AS INTEGER)) AS total_cases FROM
+[28/32] Testing: E1 — Was anyone treated for Parvo in the clinic?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=48
+  SQL: SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%Parvo%'
+[29/32] Testing: E2 — Is there a rabbit named Oreo in the system?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=48
+  SQL: SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%Parvo%'
+[30/32] Testing: E3 — Did anyone donate 50,000 PKR?...
+  ⚠️ SQL=PASS Hal=⚠️ Calls=50
+  SQL: SELECT COUNT(*) FROM raw_messages WHERE text LIKE '%PKR 50000%'
+[31/32] Testing: H1 — Has a hamster or iguana ever been treated at this clinic?...
+  ❌ SQL=FAIL Hal=⚠️ Calls=51
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%hamster%' OR text LIKE '%iguana%'
+[32/32] Testing: H2 — Was there any case of rabies reported in the clinic?...
+  ❌ SQL=FAIL Hal=⚠️ Calls=52
+  SQL: SELECT id, timestamp, text FROM raw_messages WHERE text LIKE '%rabies%'
+Report written to /home/syedfaraz/Projects/Vetlog/tests/results/report_20260625_103808.html

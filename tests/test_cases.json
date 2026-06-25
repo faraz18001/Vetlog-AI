@@ -1,0 +1,258 @@
+[
+  {
+    "id": "D1",
+    "difficulty": "easy",
+    "question": "Did Dr. Faraz treat a dog named Max?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["direct", "treatment"]
+  },
+  {
+    "id": "D2",
+    "difficulty": "easy",
+    "question": "What did Nurse Ali administer to Coco?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Nurse Ali%' AND text LIKE '%Coco%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 0,
+    "tags": ["direct", "medication"]
+  },
+  {
+    "id": "D3",
+    "difficulty": "easy",
+    "question": "Was there a donation from Paws Welfare Trust?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Paws Welfare Trust%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["direct", "donation"]
+  },
+  {
+    "id": "D4",
+    "difficulty": "easy",
+    "question": "Which animals were checked in by Receptionist Sara?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Receptionist Sara%' AND text LIKE '%checked in%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["direct", "checkin"]
+  },
+  {
+    "id": "D5",
+    "difficulty": "easy",
+    "question": "Who was on duty at 10:00 AM?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%on duty%10:00 AM%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["direct", "attendance"]
+  },
+  {
+    "id": "S1",
+    "difficulty": "medium",
+    "question": "Has any animal been treated for jaundice?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Jaundice%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["synonym", "diagnosis"]
+  },
+  {
+    "id": "S2",
+    "difficulty": "medium",
+    "question": "Did anyone treat a German Shepherd named Rocky?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE (text LIKE '%Rocky%' OR text LIKE '%German Shepherd%' OR text LIKE '%GSD%') AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["synonym", "animal"]
+  },
+  {
+    "id": "S3",
+    "difficulty": "medium",
+    "question": "Which doctor treated the Golden Retriever?",
+    "gold_sql": "SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%Golden Retriever%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["synonym", "doctor"]
+  },
+  {
+    "id": "S4",
+    "difficulty": "medium",
+    "question": "Was any surgery done on a Labrador?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE (text LIKE '%Labrador%' OR text LIKE '%Lab%') AND text LIKE '%Surgery%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 0,
+    "tags": ["synonym", "surgery"]
+  },
+  {
+    "id": "T1",
+    "difficulty": "medium",
+    "question": "How many patients were discharged after kidney disease treatment?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Kidney Disease%' AND text LIKE '%discharged%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["temporal", "discharge"]
+  },
+  {
+    "id": "T2",
+    "difficulty": "medium",
+    "question": "Who checked in a dog named Charlie and what was it for?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Charlie%' AND (text LIKE '%checked in%' OR text LIKE '%dropped off%' OR text LIKE '%arrived%' OR text LIKE '%Check-in%') AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["temporal", "checkin"]
+  },
+  {
+    "id": "T3",
+    "difficulty": "medium",
+    "question": "Which animals were kept overnight for monitoring?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%kept overnight%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["temporal", "monitoring"]
+  },
+  {
+    "id": "M1",
+    "difficulty": "hard",
+    "question": "Was there a donation specified for Buddy's treatment?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Buddy%' AND text LIKE '%donation%' OR (text LIKE '%Buddy%' AND text LIKE '%PKR%') AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["multi-message", "donation"]
+  },
+  {
+    "id": "M2",
+    "difficulty": "hard",
+    "question": "What did the blood work show for any animal?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE (text LIKE '%blood work%' OR text LIKE '%Blood work%') AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["multi-message", "lab"]
+  },
+  {
+    "id": "M3",
+    "difficulty": "hard",
+    "question": "Did Dr. Faraz treat any animal from Mr. Ahmed Khan?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND (text LIKE '%Ahmed Khan%' OR text LIKE '%Mr. Khan%') AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 0,
+    "tags": ["multi-message", "owner"]
+  },
+  {
+    "id": "M4",
+    "difficulty": "hard",
+    "question": "Which animals have X-ray results recorded?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%X-ray%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["multi-message", "lab"]
+  },
+  {
+    "id": "R1",
+    "difficulty": "hard",
+    "question": "Did Dr. Ahmed treat a brown dog for anemia?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Dr. Ahmed%' AND text LIKE '%brown%' AND text LIKE '%anemia%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 0,
+    "tags": ["red-herring", "treatment"]
+  },
+  {
+    "id": "R2",
+    "difficulty": "hard",
+    "question": "Who covered for Dr. Faraz when he signed off early?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Dr. Faraz%' AND text LIKE '%covering%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["red-herring", "attendance"]
+  },
+  {
+    "id": "R3",
+    "difficulty": "hard",
+    "question": "Did Dr. Sarah Jenkins treat a Persian cat named Lucy?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Sarah Jenkins%' AND (text LIKE '%Lucy%' OR text LIKE '%Persian%') AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 0,
+    "tags": ["red-herring", "doctor"]
+  },
+  {
+    "id": "RC1",
+    "difficulty": "hard",
+    "question": "Is there a cat named Simba that was treated recently?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Simba%' AND chat_name LIKE 'TEST_%' ORDER BY id DESC LIMIT 5",
+    "expected_min_rows": 1,
+    "tags": ["recency", "animal"]
+  },
+  {
+    "id": "RC2",
+    "difficulty": "hard",
+    "question": "What is the latest status of the animal named Charlie?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Charlie%' AND chat_name LIKE 'TEST_%' ORDER BY id DESC LIMIT 1",
+    "expected_min_rows": 1,
+    "tags": ["recency", "status"]
+  },
+  {
+    "id": "A1",
+    "difficulty": "hard",
+    "question": "Which doctors did NOT check in any patient yesterday?",
+    "gold_sql": "SELECT DISTINCT sender FROM raw_messages WHERE chat_name LIKE 'TEST_%' AND sender NOT IN (SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%checked in%' OR text LIKE '%dropped off%' OR text LIKE '%arrived%' OR text LIKE '%Check-in%' OR text LIKE '%Walk-in%')",
+    "expected_min_rows": 1,
+    "tags": ["absence", "doctor"]
+  },
+  {
+    "id": "A2",
+    "difficulty": "hard",
+    "question": "How many donations were made by Mr. Usman?",
+    "gold_sql": "SELECT COUNT(*) as cnt FROM raw_messages WHERE text LIKE '%Usman%' AND (text LIKE '%donor%' OR text LIKE '%donation%' OR text LIKE '%donated%' OR text LIKE '%contributed%') AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 0,
+    "tags": ["absence", "donation"]
+  },
+  {
+    "id": "A3",
+    "difficulty": "hard",
+    "question": "Was there any animal treated for heartworm by Dr. Faraz?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Dr. Faraz%' AND text LIKE '%Heartworm%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["absence", "treatment"]
+  },
+  {
+    "id": "CX1",
+    "difficulty": "hard",
+    "question": "Did Al-Khidmat Foundation donate for a specific animal's surgery?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Al-Khidmat%' AND text LIKE '%surgery%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 0,
+    "tags": ["cross-reference", "donation"]
+  },
+  {
+    "id": "CX2",
+    "difficulty": "hard",
+    "question": "What was the total donation amount from Mrs. Fatima?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE text LIKE '%Mrs. Fatima%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["cross-reference", "donation"]
+  },
+  {
+    "id": "CX3",
+    "difficulty": "hard",
+    "question": "Which doctor handled the most cases on duty?",
+    "gold_sql": "SELECT sender, text FROM raw_messages WHERE text LIKE '%Cases:%' AND chat_name LIKE 'TEST_%' ORDER BY id DESC LIMIT 5",
+    "expected_min_rows": 1,
+    "tags": ["cross-reference", "attendance"]
+  },
+  {
+    "id": "E1",
+    "difficulty": "easy",
+    "question": "Was anyone treated for Parvo in the clinic?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Parvo%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["edge", "diagnosis"]
+  },
+  {
+    "id": "E2",
+    "difficulty": "easy",
+    "question": "Is there a rabbit named Oreo in the system?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Oreo%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["edge", "animal"]
+  },
+  {
+    "id": "E3",
+    "difficulty": "easy",
+    "question": "Did anyone donate 50,000 PKR?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%50000%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["edge", "donation"]
+  },
+  {
+    "id": "H1",
+    "difficulty": "hard",
+    "question": "Has a hamster or iguana ever been treated at this clinic?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE (text LIKE '%hamster%' OR text LIKE '%iguana%') AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 0,
+    "tags": ["hallucination", "edge"]
+  },
+  {
+    "id": "H2",
+    "difficulty": "hard",
+    "question": "Was there any case of rabies reported in the clinic?",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%rabies%' AND chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 0,
+    "tags": ["hallucination", "edge"]
+  }
+]

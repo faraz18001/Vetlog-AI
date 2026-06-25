@@ -53,40 +53,11 @@ def get_llm_model():
 
 agent_check_pointer = MemorySaver()
 
-SCHEMA_DESCRIPTION = """
-Table: raw_messages
-
-Columns:
-  id          INTEGER PRIMARY KEY   — Auto-incrementing message ID
-  chat_name   VARCHAR NOT NULL       — Name of the WhatsApp group chat (e.g. "Vetlog Group", "Vetlog Clinical Group")
-  sender      VARCHAR NOT NULL       — Person who sent the message (e.g. "Dr. Faraz", "Nurse Ali", "Dr. Sarah Jenkins")
-  text        TEXT NOT NULL          — Message content (treatment notes, diagnoses, medication logs, status updates)
-  timestamp   VARCHAR NOT NULL       — Human-readable timestamp (e.g. "5:20 PM, 6/9/2026")
-  captured_at DATETIME               — When the message was ingested into the system
-
-Example rows:
-  id=1   chat_name="Vetlog Group"          sender="Dr. Faraz"        text="Treated the puppy"
-  id=3   chat_name="Vetlog Group"          sender="Dr. Faraz"        text="Yellowish puppy is recovering"
-  id=9   chat_name="Vetlog Clinical Group"  sender="You"              text="Treated Rocky (Dog (German Shepherd)) at 1:00 PM.\nStatus: Treatment log updated.\nDiagnosis: Gastrointestinal Infection.\nOwner: John Smith."
-  id=10  chat_name="Vetlog Clinical Group"  sender="Dr. Sarah Jenkins" text="Administered medication: Metoclopramide to Bella (Dog (Golden Retriever)).\nOwner: Sarah Miller. Dosage: 2 tab(s).\nStatus: Completed successfully."
-"""
+SCHEMA = "raw_messages(id INTEGER, chat_name VARCHAR, sender VARCHAR, text TEXT, timestamp VARCHAR, captured_at DATETIME)"
 
 SYSTEM_PROMPT = f"""You are a veterinary assistant that answers questions by querying a database of veterinary group chat messages.
-{SCHEMA_DESCRIPTION}
-Follow these steps for every user question:
-
-1. **UNDERSTAND** — Parse the user's natural language question. Identify key entities (animal, symptom, treatment, doctor, date, etc.).
-2. **GENERATE SQL** — Write a SQLite query against the `raw_messages` table that answers the question. Use LIKE for text searches, and consider searching both the `sender` and `text` columns where appropriate.
-3. **EXECUTE** — Call the `execute_sql_query` tool with your generated SQL.
-4. **ANSWER** — Read the results and respond in clear, conversational natural language. If no results match, say so politely.
-
-Guidelines:
-- Always use LIKE with wildcards for fuzzy text matching (e.g. WHERE text LIKE '%yellowish%').
-- Use OR to search multiple columns where relevant (e.g. WHERE sender LIKE '%Faraz%' OR text LIKE '%Faraz%').
-- Use strftime or string comparison on the timestamp column if date filtering is needed.
-- If a query returns an error, fix the SQL and try again.
-- Never make up data — only report what the database returns.
-- Keep answers concise but informative, quoting the relevant message text when appropriate."""
+Schema: {SCHEMA}.
+Use LIKE for fuzzy text search. Call execute_sql_query with your SQL, then answer naturally from the results. Never make up data."""
 
 
 def initialize_agent():

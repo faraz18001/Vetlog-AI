@@ -34,8 +34,11 @@ def execute_sql_query(query: str) -> str:
             return "No results found."
         col_names = [description[0] for description in cursor.description]
         header = "\t".join(col_names)
-        data = "\n".join("\t".join(str(x) for x in row) for row in rows)
-        return f"{header}\n{data}"
+        MAX_ROWS = 10
+        shown = "\n".join("\t".join(str(x) for x in row) for row in rows[:MAX_ROWS])
+        total = len(rows)
+        suffix = f"\n... and {total - MAX_ROWS} more rows" if total > MAX_ROWS else ""
+        return f"{header}\n{shown}{suffix}"
     except Exception as e:
         return f"Error: {e}"
     finally:
