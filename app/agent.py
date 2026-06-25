@@ -1,5 +1,6 @@
 import os
 
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
@@ -86,13 +87,81 @@ def build_openai_model():
     )
 
 
+def build_gemini_model(api_key: str, model_name: str):
+    """
+    Create a ChatGoogleGenerativeAI client for the Google Gemini API.
+
+    Uses the Gemini Developer API (not Vertex AI). The API key is read from
+    GOOGLE_API_KEY (or GEMINI_API_KEY as fallback) in the environment.
+
+    Args:
+        api_key:    Google AI API key from Google AI Studio.
+        model_name: The Gemini model identifier (e.g. 'gemini-2.0-flash').
+
+    Returns:
+        A ChatGoogleGenerativeAI instance ready for use.
+    """
+    return ChatGoogleGenerativeAI(
+        model=model_name,
+        api_key=api_key,
+        temperature=0.2,
+    )
+
+
+def build_groq_model(api_key: str, model_name: str):
+    """
+    Create a ChatOpenAI client for the Groq API.
+
+    Groq exposes an OpenAI-compatible endpoint so we use ChatOpenAI with
+    a custom base URL. No extra package is needed.
+
+    Args:
+        api_key:    Groq API key from https://console.groq.com/keys.
+        model_name: The Groq model identifier (e.g. 'llama-3.3-70b-versatile').
+
+    Returns:
+        A ChatOpenAI instance pointed at the Groq API.
+    """
+    return ChatOpenAI(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=api_key,
+        model=model_name,
+        temperature=0.2,
+    )
+
+
+def build_mistral_model(api_key: str, model_name: str):
+    """
+    Create a ChatOpenAI client for the Mistral API.
+
+    Mistral exposes an OpenAI-compatible endpoint so we use ChatOpenAI with
+    a custom base URL. No extra package is needed.
+
+    Args:
+        api_key:    Mistral API key from https://console.mistral.ai.
+        model_name: The Mistral model identifier (e.g. 'mistral-small-latest').
+
+    Returns:
+        A ChatOpenAI instance pointed at the Mistral API.
+    """
+    return ChatOpenAI(
+        base_url="https://api.mistral.ai/v1",
+        api_key=api_key,
+        model=model_name,
+        temperature=0.2,
+    )
+
+
 def get_llm_model():
     """
     Factory that picks and configures the right LLM based on .env settings.
 
     Reads AGENT_PROVIDER to decide which provider to use:
     - 'ollama' (default): Ollama Cloud or a local Ollama server.
-    - anything else: falls back to the standard OpenAI API.
+    - 'gemini':           Google Gemini via the Gemini Developer API.
+    - 'groq':             Groq via its OpenAI-compatible endpoint.
+    - 'mistral':          Mistral via its OpenAI-compatible endpoint.
+    - anything else:      falls back to the standard OpenAI API.
 
     Returns:
         A configured LangChain chat model instance.
@@ -104,6 +173,24 @@ def get_llm_model():
         model_name = os.getenv("OLLAMA_MODEL", "gpt-oss:20b-cloud")
         api_key = os.getenv("OLLAMA_API_KEY", "")
         return build_ollama_model(base_url, model_name, api_key)
+
+    if provider == "gemini":
+        return build_gemini_model(
+            api_key=os.getenv("GOOGLE_API_KEY", ""),
+            model_name=os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite"),
+        )
+
+    if provider == "groq":
+        return build_groq_model(
+            api_key=os.getenv("GROQ_API_KEY", ""),
+            model_name=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        )
+
+    if provider == "mistral":
+        return build_mistral_model(
+            api_key=os.getenv("MISTRAL_API_KEY", ""),
+            model_name=os.getenv("MISTRAL_MODEL", "mistral-small-latest"),
+        )
 
     return build_openai_model()
 
