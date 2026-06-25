@@ -29,8 +29,8 @@ function extractFilename(reportPath) {
  * ReportCard — rendered inside the chat when the agent generates a report.
  *
  * Shows a collapsible markdown preview of the report and two action buttons:
- *   - "Export PDF" — opens a print-ready HTML page in a new tab so the user
- *     can save it as PDF via the browser's print dialog.
+ *   - "Download PDF" — fetches the PDF from the server and downloads it directly
+ *     (no new tab, no print dialog).
  *   - "Download .md" — downloads the raw markdown file to the user's machine.
  */
 export default function ReportCard({ reportPath }) {
@@ -64,10 +64,24 @@ export default function ReportCard({ reportPath }) {
     fetchReport();
   }, [filename]);
 
-  function handleExportPdf() {
-    // Opens the styled HTML version in a new tab.
-    // The page auto-triggers the browser print dialog so the user can save as PDF.
-    window.open(`/api/reports/${filename}/export`, "_blank");
+  async function handleDownloadPdf() {
+    try {
+      const response = await fetch(`/api/reports/${filename}/pdf`);
+      if (!response.ok) throw new Error(`PDF download failed (HTTP ${response.status})`);
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      const pdfFilename = filename.replace(".md", ".pdf");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = pdfFilename;
+      link.click();
+
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF download error:", err);
+    }
   }
 
   function handleDownloadMarkdown() {
@@ -139,8 +153,8 @@ export default function ReportCard({ reportPath }) {
       <div className="report-card-actions">
         <button
           className="report-card-btn report-card-btn--primary"
-          onClick={handleExportPdf}
-          title="Opens a print-ready page — use Ctrl+P to save as PDF"
+          onClick={handleDownloadPdf}
+          title="Download as a PDF file directly"
         >
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
             <path
@@ -148,7 +162,7 @@ export default function ReportCard({ reportPath }) {
               stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"
             />
           </svg>
-          Export PDF
+          Download PDF
         </button>
 
         <button
