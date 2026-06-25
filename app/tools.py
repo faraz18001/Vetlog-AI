@@ -3,43 +3,93 @@ import sqlite3
 from urllib.parse import urlparse
 
 from langchain_core.tools import tool
+
 from app.config import DATABASE_URL
 
 
-def _get_db_path() -> str:
+def _resolve_db_path() -> str:
+    """
+    Convert the DATABASE_URL from config into an absolute file path.
+
+    SQLite URLs look like 'sqlite:///vetlog.db' or 'sqlite:////abs/path.db'.
+    urlparse gives us the path portion. If it is relative, we resolve it
+    against the project root (one directory above this file's package).
+
+    Returns:
+        The absolute path to the SQLite database file.
+    """
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     parsed = urlparse(DATABASE_URL)
-    path = parsed.path
-    if path.startswith("/"):
-        path = path.lstrip("/")
-    resolved = os.path.join(project_root, path) if not os.path.isabs(path) else path
-    return resolved or os.path.join(project_root, "vetlog.db")
+    db_path = parsed.path
+
+    # urlparse includes a leading slash for absolute paths — strip it for
+    # relative paths so os.path.join works correctly.
+    if db_path.startswith("/"):
+        db_path = db_path.lstrip("/")
+
+    if os.path.isabs(db_path):
+        return db_path
+
+    resolved = os.path.join(project_root, db_path)
+
+    # Fall back to a sensible default if the URL was empty or malformed.
+    if not resolved:
+        return os.path.join(project_root, "vetlog.db")
+
+    return resolved
 
 
-DB_PATH = _get_db_path()
+DB_PATH = _resolve_db_path()
 
 
 @tool
 def execute_sql_query(query: str) -> str:
-    """Execute a raw SQL query on the vetlog database and return the results.
-    The database has a single table called 'raw_messages' that stores veterinary group chat messages.
-    Use this tool after you have generated the correct SQL for the user's question.
-    If the query fails, an error message is returned — rewrite and retry."""
-    con = sqlite3.connect(DB_PATH)
+    """
+    Execute a read-only SQL query against the Vetlog SQLite database.
+
+    The database has one table — raw_messages — which stores WhatsApp
+    messages scraped from the clinic's group chats. Use this tool after
+    writing the correct SQL for the user's question. If the query fails,
+    the error message is returned so you can fix and retry.
+
+    Args:
+        query: A valid SQLite SELECT statement.
+
+    Returns:
+        A tab-separated string of results (header row + data rows),
+        'No results found.' if the query matched nothing,
+        or an error message if the query was invalid.
+    """
+    connection = sqlite3.connect(DB_PATH)
+
     try:
-        cursor = con.cursor()
+        cursor = connection.cursor()
         cursor.execute(query)
         rows = cursor.fetchall()
+
         if not rows:
             return "No results found."
-        col_names = [description[0] for description in cursor.description]
-        header = "\t".join(col_names)
+
+        # Build a tab-separated table: header row then data rows.
+        column_names = [description[0] for description in cursor.description]
+        header = "\t".join(column_names)
+
+        # Cap results at 10 rows to keep the response concise.
         MAX_ROWS = 10
-        shown = "\n".join("\t".join(str(x) for x in row) for row in rows[:MAX_ROWS])
-        total = len(rows)
-        suffix = f"\n... and {total - MAX_ROWS} more rows" if total > MAX_ROWS else ""
-        return f"{header}\n{shown}{suffix}"
-    except Exception as e:
-        return f"Error: {e}"
+        data_rows = []
+        for row in rows[:MAX_ROWS]:
+            data_rows.append("\t".join(str(cell) for cell in row))
+
+        result = header + "\n" + "\n".join(data_rows)
+
+        if len(rows) > MAX_ROWS:
+            result += f"\n... and {len(rows) - MAX_ROWS} more rows"
+
+        return result
+
+    except Exception as error:
+        return f"Error: {error}"
+
     finally:
-        con.close()
+        connection.close()
