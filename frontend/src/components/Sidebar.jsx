@@ -27,7 +27,7 @@ const DUMMY_HISTORY = [
   },
 ];
 
-export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled }) {
+export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled, onOpenSettings }) {
   return (
     <AnimatePresence initial={false}>
       {isOpen && (
@@ -73,7 +73,10 @@ export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled }) {
 
       {/* Bottom Profile / Settings */}
       <div className="sidebar-footer">
-        <button className="sidebar-footer-btn">
+        <button 
+          className="sidebar-footer-btn"
+          onClick={onOpenSettings}
+        >
           <Settings size={16} strokeWidth={2} />
           <span>Settings</span>
         </button>

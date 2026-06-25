@@ -17,8 +17,11 @@ from app.schemas import (
     RawMessageIn,
     TokenUsage,
     UsageStats,
+    LLMConfigResponse,
+    LLMConfigUpdate,
 )
 from app.tools import REPORTS_DIR
+from app.config_manager import update_env_file
 
 app = FastAPI()
 
@@ -58,6 +61,38 @@ def startup():
 def root():
     """Health-check endpoint."""
     return {"status": "alive"}
+
+
+@app.get("/api/config/llm", response_model=LLMConfigResponse)
+def get_llm_config():
+    """Return the currently configured LLM provider and model (without the API key)."""
+    provider = os.getenv("AGENT_PROVIDER", "ollama").lower()
+    provider_upper = provider.upper()
+    
+    if provider_upper == "GEMINI":
+        model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+    elif provider_upper == "OPENAI":
+        model = os.getenv("DEFAULT_MODEL", "gpt-4o")
+    else:
+        model = os.getenv(f"{provider_upper}_MODEL", "")
+        
+    return LLMConfigResponse(provider=provider, model=model)
+
+
+@app.post("/api/config/llm")
+def set_llm_config(payload: LLMConfigUpdate):
+    """
+    Update the active LLM provider, save to .env, and hot-reload the agent.
+    WARNING: Hot-reloading wipes the short-term conversation memory of the current session.
+    """
+    update_env_file(payload.provider, payload.model, payload.api_key)
+    
+    # Hot reload the global agent so it picks up the new environment variables
+    global _agent
+    _agent = initialize_agent()
+    print(f"[Vetlog] Agent re-initialized with provider: {payload.provider}")
+    
+    return {"status": "success"}
 
 
 def extract_content(message) -> str:

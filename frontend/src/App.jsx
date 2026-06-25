@@ -3,6 +3,7 @@ import { useChat } from "./hooks/useChat.js";
 import ChatWindow from "./components/ChatWindow.jsx";
 import InputBar from "./components/InputBar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
+import SettingsModal from "./components/SettingsModal.jsx";
 import { Stethoscope, PanelLeft } from "lucide-react";
 import "./App.css";
 
@@ -11,6 +12,7 @@ import "./App.css";
 export default function App() {
   const { messages, isLoading, sendMessage, clearChat, sessionUsage } = useChat();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
     <div className="app-shell">
@@ -18,6 +20,12 @@ export default function App() {
         isOpen={isSidebarOpen}
         onNewChat={clearChat} 
         isNewChatDisabled={messages.length === 0 && !isLoading} 
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
+      
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
       />
       
       <div className="app-content">

@@ -58,3 +58,12 @@ class RawMessageOut(BaseModel):
     captured_at: datetime
 
     model_config = {"from_attributes": True}
+
+class LLMConfigUpdate(BaseModel):
+    provider: str
+    model: str
+    api_key: str
+
+class LLMConfigResponse(BaseModel):
+    provider: str
+    model: str
