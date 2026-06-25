@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { List } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 /** Dot icon for each node on the timeline */
 function StepDot({ label, isLast, isStreaming }) {
@@ -48,26 +49,36 @@ export default function StepChain({ steps, isStreaming }) {
   /* ── Collapsed summary pill ─────────────────────────────────────── */
   if (!expanded) {
     return (
-      <button
+      <motion.button
+        layout
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
         className="steps-summary"
         onClick={() => setExpanded(true)}
         aria-label="Show agent steps"
       >
         <List size={12} strokeWidth={2.5} aria-hidden />
         {steps.length} step{steps.length !== 1 ? "s" : ""}
-      </button>
+      </motion.button>
     );
   }
 
   /* ── Expanded vertical timeline ─────────────────────────────────── */
   return (
-    <div className="steps-chain">
+    <motion.div layout className="steps-chain">
+      <AnimatePresence>
       {steps.map((step, i) => {
         const isLast = i === steps.length - 1;
         const showConnector = !isLast || isStreaming;
 
         return (
-          <div key={i} className="step-row" style={{ animationDelay: `${i * 60}ms` }}>
+          <motion.div 
+            key={i} 
+            layout
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="step-row"
+          >
             {/* Left column: dot + connector line */}
             <div className="step-track">
               <StepDot label={step.label} isLast={isLast} isStreaming={false} />
@@ -80,13 +91,13 @@ export default function StepChain({ steps, isStreaming }) {
             >
               {step.label}
             </span>
-          </div>
+          </motion.div>
         );
       })}
 
       {/* Animated pulse node while the agent is still working */}
       {isStreaming && (
-        <div className="step-row">
+        <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="step-row">
           <div className="step-track">
             <span className="step-dot step-dot--live" aria-hidden />
           </div>
@@ -95,18 +106,22 @@ export default function StepChain({ steps, isStreaming }) {
             <span className="dot" />
             <span className="dot" />
           </span>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {!isStreaming && steps.length > 0 && (
-        <button
+        <motion.button
+          layout
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="steps-collapse-btn"
           onClick={() => setExpanded(false)}
           aria-label="Collapse steps"
         >
           Collapse
-        </button>
+        </motion.button>
       )}
-    </div>
+    </motion.div>
   );
 }

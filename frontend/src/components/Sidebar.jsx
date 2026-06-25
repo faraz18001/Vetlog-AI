@@ -1,4 +1,5 @@
 import { SquarePen, MessageSquare, Settings, User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import "./Sidebar.css";
 
 const DUMMY_HISTORY = [
@@ -26,10 +27,19 @@ const DUMMY_HISTORY = [
   },
 ];
 
-export default function Sidebar({ onNewChat, isNewChatDisabled }) {
+export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled }) {
   return (
-    <aside className="sidebar">
-      {/* Top Action */}
+    <AnimatePresence initial={false}>
+      {isOpen && (
+        <motion.aside 
+          className="sidebar"
+          initial={{ width: 0 }}
+          animate={{ width: 260 }}
+          exit={{ width: 0 }}
+          transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+        >
+          <div className="sidebar-inner">
+            {/* Top Action */}
       <div className="sidebar-header">
         <button
           className="sidebar-new-chat"
@@ -76,7 +86,10 @@ export default function Sidebar({ onNewChat, isNewChatDisabled }) {
             <span className="profile-role">Veterinarian</span>
           </div>
         </button>
-      </div>
-    </aside>
+            </div>
+          </div>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }

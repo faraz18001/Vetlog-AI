@@ -14,12 +14,11 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      {isSidebarOpen && (
-        <Sidebar 
-          onNewChat={clearChat} 
-          isNewChatDisabled={messages.length === 0 && !isLoading} 
-        />
-      )}
+      <Sidebar 
+        isOpen={isSidebarOpen}
+        onNewChat={clearChat} 
+        isNewChatDisabled={messages.length === 0 && !isLoading} 
+      />
       
       <div className="app-content">
         {/* ---- Topbar ---- */}

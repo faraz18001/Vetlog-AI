@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Stethoscope } from "lucide-react";
+import { motion } from "framer-motion";
 import ReportCard from "./ReportCard.jsx";
 import StepChain from "./StepChain.jsx";
 
@@ -37,7 +38,13 @@ export default function MessageBubble({ message }) {
     : null;
 
   return (
-    <div className={`msg-row ${isUser ? "msg-row--user" : "msg-row--ai"}`}>
+    <motion.div 
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+      className={`msg-row ${isUser ? "msg-row--user" : "msg-row--ai"}`}
+    >
       {/* Avatar */}
       <div
         className={`msg-avatar ${isUser ? "msg-avatar--user" : "msg-avatar--ai"}`}
@@ -108,6 +115,6 @@ export default function MessageBubble({ message }) {
           <UsageBadge usage={message.usage} />
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
