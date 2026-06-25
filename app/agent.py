@@ -6,9 +6,9 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
-from app.tools import execute_sql_query
+from app.tools import execute_sql_query, generate_report
 
-tools = [execute_sql_query]
+tools = [execute_sql_query, generate_report]
 
 # Shared checkpointer — keeps conversation memory across requests as long
 # as the server process is running.
@@ -21,12 +21,23 @@ WhatsApp group chat messages.
 Database table: raw_messages
 Columns: id, chat_name, sender, text, timestamp, captured_at
 
+Steps (use tools in this order when needed):
+1. execute_sql_query — run your SQL SELECT first
+2. generate_report — only if user explicitly asks for a report
+
 Rules:
-- Always use a single SQL query. Never call the tool more than once per question.
 - Use LIKE with wildcards for text searches (e.g. WHERE text LIKE '%Rocky%').
-- Use GROUP BY and COUNT when the question asks for summaries or counts.
-- Only report what the database actually returns. Never invent data.
-- Keep answers short and conversational."""
+- Use GROUP BY and COUNT for summaries.
+- For "total donations" use SUM on numeric values in text.
+- Only report what the database returns. Never invent data.
+- If SQL errors, fix and retry.
+- Keep answers short and conversational.
+- For report requests: query data first, then call generate_report.
+
+Examples:
+- Q: "Did Dr. Faraz treat Max?" → SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'
+- Q: "Total donations from Mrs. Fatima" → SELECT text FROM raw_messages WHERE text LIKE '%Mrs. Fatima%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'
+- Q: "Generate a donation report" → query donations, then call generate_report(report_type='donation_ledger', ...)"""
 
 
 def build_ollama_model(base_url: str, model_name: str, api_key: str):
@@ -152,6 +163,52 @@ def build_mistral_model(api_key: str, model_name: str):
     )
 
 
+def build_cerebras_model(api_key: str, model_name: str):
+    """
+    Create a ChatOpenAI client for the Cerebras API.
+
+    Cerebras exposes an OpenAI-compatible endpoint so we use ChatOpenAI with
+    a custom base URL. No extra package is needed.
+
+    Args:
+        api_key:    Cerebras API key from https://console.cerebras.ai.
+        model_name: The Cerebras model identifier (e.g. 'llama-3.3-70b').
+
+    Returns:
+        A ChatOpenAI instance pointed at the Cerebras API.
+    """
+    return ChatOpenAI(
+        base_url="https://api.cerebras.ai/v1",
+        api_key=api_key,
+        model=model_name,
+        temperature=0.2,
+    )
+
+
+def build_openrouter_model(api_key: str, model_name: str):
+    """
+    Create a ChatOpenAI client for the OpenRouter API.
+
+    OpenRouter exposes an OpenAI-compatible endpoint that aggregates many
+    free models from multiple providers. We use ChatOpenAI with a custom
+    base URL. No extra package is needed.
+
+    Args:
+        api_key:    OpenRouter API key from https://openrouter.ai/keys.
+        model_name: The model identifier (e.g. 'auto:free' for smart routing).
+
+    Returns:
+        A ChatOpenAI instance pointed at the OpenRouter API.
+    """
+    return ChatOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+        model=model_name,
+        temperature=0.2,
+        default_headers={"HTTP-Referer": "https://vetlog.app"},
+    )
+
+
 def get_llm_model():
     """
     Factory that picks and configures the right LLM based on .env settings.
@@ -161,6 +218,8 @@ def get_llm_model():
     - 'gemini':           Google Gemini via the Gemini Developer API.
     - 'groq':             Groq via its OpenAI-compatible endpoint.
     - 'mistral':          Mistral via its OpenAI-compatible endpoint.
+    - 'cerebras':         Cerebras via its OpenAI-compatible endpoint.
+    - 'openrouter':       OpenRouter via its OpenAI-compatible endpoint.
     - anything else:      falls back to the standard OpenAI API.
 
     Returns:
@@ -190,6 +249,18 @@ def get_llm_model():
         return build_mistral_model(
             api_key=os.getenv("MISTRAL_API_KEY", ""),
             model_name=os.getenv("MISTRAL_MODEL", "mistral-small-latest"),
+        )
+
+    if provider == "cerebras":
+        return build_cerebras_model(
+            api_key=os.getenv("CEREBRAS_API_KEY", ""),
+            model_name=os.getenv("CEREBRAS_MODEL", "llama-3.3-70b"),
+        )
+
+    if provider == "openrouter":
+        return build_openrouter_model(
+            api_key=os.getenv("OPENROUTER_API_KEY", ""),
+            model_name=os.getenv("OPENROUTER_MODEL", "auto:free"),
         )
 
     return build_openai_model()
