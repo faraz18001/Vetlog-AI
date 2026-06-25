@@ -27,11 +27,17 @@ class TokenUsage(BaseModel):
     cost_usd: float = 0.0  # 0.0 means pricing not configured
 
 
+class AgentStep(BaseModel):
+    label: str   # Short human-readable title shown in the step chain
+    detail: str  # Extra info (e.g. the SQL query, or row count)
+
+
 class ChatResponse(BaseModel):
     response: str
     thread_id: str
     usage: TokenUsage | None = None
     report_path: str | None = None  # e.g. 'reports/daily_summary_2025-06-25_title.md'
+    steps: list[AgentStep] = []     # Intermediate agent steps for the frontend step chain
 
 
 class UsageStats(BaseModel):

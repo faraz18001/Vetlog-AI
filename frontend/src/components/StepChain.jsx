@@ -1,91 +1,50 @@
 import { useState, useEffect } from "react";
 
-/**
- * Pick an appropriate SVG icon based on the step label.
- */
-function StepIcon({ label }) {
-  if (label === "Thinking") {
-    return (
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-        <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 2" />
-      </svg>
-    );
-  }
-
-  if (label.startsWith("Running SQL")) {
-    return (
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-        <rect x="1" y="1" width="10" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M3 4h6M3 6h4M3 8h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-      </svg>
-    );
-  }
-
-  if (label.startsWith("Generating")) {
-    return (
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-        <rect x="1.5" y="0.5" width="7" height="11" rx="1" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M3.5 3.5h5M3.5 5.5h5M3.5 7.5h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-      </svg>
-    );
-  }
-
-  if (label === "Report saved") {
-    return (
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-        <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M3.5 6l1.8 1.8 3-3.6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-
-  if (label.includes("returned") || label.includes("results")) {
-    return (
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-        <path d="M1 3h10M1 6h10M1 9h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-      </svg>
-    );
-  }
-
-  if (label.includes("failed")) {
-    return (
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-        <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M6 3.5v3M6 8h.01" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-      </svg>
-    );
-  }
+/** Dot icon for each node on the timeline */
+function StepDot({ label, isLast, isStreaming }) {
+  const isError = label.includes("failed") || label.includes("error");
+  const isDone = label === "Report saved";
 
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-      <circle cx="6" cy="6" r="2.5" fill="currentColor" />
-    </svg>
+    <span
+      className={[
+        "step-dot",
+        isError ? "step-dot--error" : "",
+        isDone ? "step-dot--done" : "",
+        isStreaming && isLast ? "step-dot--pulse" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      aria-hidden
+    />
   );
 }
 
 /**
- * StepChain — shows the agent's live execution steps in the chat.
+ * StepChain — vertical timeline of agent execution steps.
  *
- * Steps arrive from the backend SSE stream as the agent actually executes them
- * (SQL queries, tool calls, row counts). While the agent is working the list
- * grows in real time. Two seconds after the final response arrives the chain
- * auto-collapses to a compact pill — the user can click it to expand again.
+ * While the agent is working steps appear one-by-one with a connecting
+ * line between them (like a flowchart). Two seconds after the agent
+ * finishes the whole timeline collapses to a single summary pill —
+ * click it to expand again.
  *
  * Props:
- *   steps       - Array of { label: string, detail: string } from the backend.
- *   isStreaming - True while the agent is still running.
+ *   steps       - Array of { label: string }
+ *   isStreaming - True while the agent is still working
  */
 export default function StepChain({ steps, isStreaming }) {
   const [expanded, setExpanded] = useState(true);
 
+  // Auto-collapse 2 s after the agent finishes
   useEffect(() => {
     if (isStreaming || steps.length === 0) return;
-    const timer = setTimeout(() => setExpanded(false), 2000);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setExpanded(false), 2000);
+    return () => clearTimeout(t);
   }, [isStreaming, steps.length]);
 
-  if (steps.length === 0) return null;
+  if (steps.length === 0 && !isStreaming) return null;
 
+  /* ── Collapsed summary pill ─────────────────────────────────────── */
   if (!expanded) {
     return (
       <button
@@ -93,49 +52,55 @@ export default function StepChain({ steps, isStreaming }) {
         onClick={() => setExpanded(true)}
         aria-label="Show agent steps"
       >
-        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden>
-          <circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" strokeWidth="1.2" />
-          <path d="M3.5 5.5h4M5.5 3.5v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
+          <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.3" />
+          <path d="M3 5h4M5 3v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
         </svg>
         {steps.length} step{steps.length !== 1 ? "s" : ""}
       </button>
     );
   }
 
+  /* ── Expanded vertical timeline ─────────────────────────────────── */
   return (
     <div className="steps-chain">
-      <div className="steps-chain-items">
-        {steps.map((step, index) => (
-          <div
-            key={index}
-            className="step-item"
-            style={{ animationDelay: `${index * 60}ms` }}
-          >
-            <span className="step-icon">
-              <StepIcon label={step.label} />
-            </span>
+      {steps.map((step, i) => {
+        const isLast = i === steps.length - 1;
+        const showConnector = !isLast || isStreaming;
 
-            <div className="step-body">
-              <span className="step-label">{step.label}</span>
-              {step.detail && (
-                <span className="step-detail">{step.detail}</span>
-              )}
+        return (
+          <div key={i} className="step-row" style={{ animationDelay: `${i * 60}ms` }}>
+            {/* Left column: dot + connector line */}
+            <div className="step-track">
+              <StepDot label={step.label} isLast={isLast} isStreaming={false} />
+              {showConnector && <span className="step-connector" />}
             </div>
-          </div>
-        ))}
 
-        {isStreaming && (
-          <div className="step-item">
-            <span className="step-icon step-icon--pulse">
-              <span className="dot" />
-              <span className="dot" />
-              <span className="dot" />
+            {/* Right column: label */}
+            <span
+              className={`step-label${step.label.includes("failed") || step.label.includes("error") ? " step-label--error" : ""}`}
+            >
+              {step.label}
             </span>
           </div>
-        )}
-      </div>
+        );
+      })}
 
-      {!isStreaming && (
+      {/* Animated pulse node while the agent is still working */}
+      {isStreaming && (
+        <div className="step-row">
+          <div className="step-track">
+            <span className="step-dot step-dot--live" aria-hidden />
+          </div>
+          <span className="step-pulse-label">
+            <span className="dot" />
+            <span className="dot" />
+            <span className="dot" />
+          </span>
+        </div>
+      )}
+
+      {!isStreaming && steps.length > 0 && (
         <button
           className="steps-collapse-btn"
           onClick={() => setExpanded(false)}

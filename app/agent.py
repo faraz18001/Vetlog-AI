@@ -29,9 +29,9 @@ Rules:
 - Use LIKE with wildcards for text searches (e.g. WHERE text LIKE '%Rocky%').
 - Use GROUP BY and COUNT for summaries.
 - For "total donations" use SUM on numeric values in text.
-- Only report what the database returns. Never invent data.
+- Only report what the database returns. Never invent data — including row counts, names, or amounts.
 - If SQL errors, fix and retry.
-- Keep answers short and conversational.
+- Keep answers short and conversational. Exception: when the user asks to "show" or "see" messages, include the actual message content (sender, text snippet, date) inline rather than just summarizing.
 - For report requests: query data first, then call generate_report.
 - IMPORTANT: When you call generate_report, do NOT repeat the data in your
   text reply. The UI already shows the report as a preview card. Just confirm

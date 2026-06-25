@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ReportCard from "./ReportCard.jsx";
+import StepChain from "./StepChain.jsx";
 
 function fmt(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
@@ -27,7 +28,7 @@ function UsageBadge({ usage }) {
 
 /** Individual message row — user or assistant */
 export default function MessageBubble({ message }) {
-  const { role, content, isStreaming, isError, timestamp } = message;
+  const { role, content, isStreaming, isError, timestamp, steps } = message;
   const isUser = role === "user";
 
   const timeLabel = timestamp
@@ -66,8 +67,8 @@ export default function MessageBubble({ message }) {
       <div
         className={`msg-bubble ${isUser ? "msg-bubble--user" : "msg-bubble--ai"}`}
       >
-        {/* Thinking dots — no content yet but still streaming */}
-        {!isUser && isStreaming && !content ? (
+        {/* Thinking dots — shown only when streaming hasn't produced any steps or text yet */}
+        {!isUser && isStreaming && !content && (!steps || steps.length === 0) ? (
           <span
             className="msg-thinking"
             role="status"
@@ -103,6 +104,11 @@ export default function MessageBubble({ message }) {
           <span className="msg-ts" aria-hidden="true">
             {timeLabel}
           </span>
+        )}
+
+        {/* Step chain — shown for AI messages that triggered tool calls */}
+        {!isUser && (steps?.length > 0 || isStreaming) && (
+          <StepChain steps={steps ?? []} isStreaming={isStreaming} />
         )}
 
         {/* Report card — shown when the agent generated a report this turn */}

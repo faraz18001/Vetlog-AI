@@ -4,29 +4,6 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-/** Typeout animation — "writes" text into a message incrementally */
-async function typeout(text, msgId, setMessages, signal) {
-  const len = text.length;
-  const chunkSize = len > 600 ? 8 : len > 200 ? 4 : 2;
-  const delay = len > 600 ? 6 : len > 200 ? 10 : 15;
-
-  for (let i = chunkSize; i < len; i += chunkSize) {
-    if (signal?.aborted) return;
-    await new Promise((r) => setTimeout(r, delay));
-    const slice = text.slice(0, i);
-    setMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, content: slice } : m)),
-    );
-  }
-
-  // Settle on the complete text and stop streaming
-  setMessages((prev) =>
-    prev.map((m) =>
-      m.id === msgId ? { ...m, content: text, isStreaming: false } : m,
-    ),
-  );
-}
-
 export function useChat() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +14,7 @@ export function useChat() {
     async (text) => {
       if (!text.trim() || isLoading) return;
 
-      // Cancel any in-progress typeout
+      // Cancel any in-progress request
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -59,13 +36,14 @@ export function useChat() {
         isError: false,
         usage: null,
         reportPath: null,
+        steps: [],
       };
 
       setMessages((prev) => [...prev, userMsg, aiMsg]);
       setIsLoading(true);
 
       try {
-        const res = await fetch("/api/chat/", {
+        const res = await fetch("/api/chat/stream/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -80,27 +58,78 @@ export function useChat() {
           throw new Error(err.detail ?? `HTTP ${res.status}`);
         }
 
-        const data = await res.json();
-        const reply =
-          typeof data.response === "string"
-            ? data.response
-            : JSON.stringify(data.response);
+        // Read the SSE stream line-by-line
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
 
-        // Attach usage and report metadata before typeout so they're visible once done.
-        if (data.usage || data.report_path) {
-          setMessages((prev) =>
-            prev.map((m) => {
-              if (m.id !== aiMsgId) return m;
-              return {
-                ...m,
-                usage: data.usage ?? m.usage,
-                reportPath: data.report_path ?? null,
-              };
-            }),
-          );
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          // Keep the last (potentially incomplete) line in the buffer
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const raw = line.slice(6).trim();
+            if (!raw) continue;
+
+            let evt;
+            try {
+              evt = JSON.parse(raw);
+            } catch {
+              continue;
+            }
+
+            if (evt.type === "step") {
+              // Append a new step to the step chain in real-time,
+              // but skip it if it's identical to the last step (prevents duplicates).
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId
+                    ? {
+                        ...m,
+                        steps:
+                          m.steps.length > 0 &&
+                          m.steps[m.steps.length - 1].label === evt.label &&
+                          m.steps[m.steps.length - 1].detail === evt.detail
+                            ? m.steps
+                            : [...m.steps, { label: evt.label, detail: evt.detail }],
+                      }
+                    : m,
+                ),
+              );
+            } else if (evt.type === "chunk") {
+              // Append streamed text token directly — no fake typeout needed
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId
+                    ? { ...m, content: m.content + evt.text }
+                    : m,
+                ),
+              );
+            } else if (evt.type === "done") {
+              // Finalise the message with usage/report and stop streaming indicator
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId
+                    ? {
+                        ...m,
+                        isStreaming: false,
+                        usage: evt.usage ?? null,
+                        reportPath: evt.report_path ?? null,
+                      }
+                    : m,
+                ),
+              );
+            } else if (evt.type === "error") {
+              throw new Error(evt.message ?? "Agent error");
+            }
+          }
         }
-
-        await typeout(reply, aiMsgId, setMessages, controller.signal);
       } catch (err) {
         if (err.name === "AbortError") return;
         setMessages((prev) =>

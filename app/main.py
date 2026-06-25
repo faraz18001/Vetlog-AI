@@ -1,14 +1,16 @@
+import json
 import os
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.agent import initialize_agent
 from app.config import INPUT_TOKEN_PRICE_PER_1K, OUTPUT_TOKEN_PRICE_PER_1K
 from app.database import RawMessage, get_session, init_db
 from app.schemas import (
+    AgentStep,
     ChatRequest,
     ChatResponse,
     RawMessageBatchIn,
@@ -147,14 +149,16 @@ def chat_endpoint(payload: ChatRequest):
     Send a message to the Vetlog AI agent and get a response.
 
     The agent queries the SQLite database using natural language and
-    returns an answer. Token usage is tracked per request.
+    returns an answer. Token usage and agent step chain are tracked
+    per request and returned to the frontend.
 
     Args:
         payload: Contains the user's message and a thread_id for
                  conversation memory.
 
     Returns:
-        The agent's response text along with token usage data.
+        The agent's response text, token usage data, optional report
+        path, and a list of intermediate agent steps.
     """
     if _agent is None:
         raise HTTPException(status_code=503, detail="Agent not initialised yet.")
@@ -173,12 +177,199 @@ def chat_endpoint(payload: ChatRequest):
     usage = extract_usage(messages)
     accumulate_usage(usage)
     report_path = find_report_path(messages)
+    steps = extract_steps(messages)
 
     return ChatResponse(
         response=response_text,
         thread_id=payload.thread_id,
         usage=usage,
         report_path=report_path,
+        steps=steps,
+    )
+
+
+@app.post("/chat/stream/")
+async def chat_stream(payload: ChatRequest):
+    """
+    Stream the agent's execution as Server-Sent Events (SSE).
+
+    Emits three types of events while the agent runs:
+      - {"type": "step",  "label": str, "detail": str}  — a tool-call step
+      - {"type": "chunk", "text":  str}                  — a text token of the final answer
+      - {"type": "done",  "usage": {...}, "report_path": str|null}
+
+    The frontend reads this stream and:
+      1. Appends each step to the step chain in real-time.
+      2. Streams the answer text as chunks arrive (no separate typeout needed).
+      3. Attaches usage/report metadata when the done event fires.
+    """
+    if _agent is None:
+        raise HTTPException(status_code=503, detail="Agent not initialised yet.")
+
+    config = {"configurable": {"thread_id": payload.thread_id}}
+
+    async def event_generator():
+        report_path = None
+        total_input = 0
+        total_output = 0
+
+        # Text chunks are buffered while tools are in flight.
+        # They are flushed only after the last tool_end, so the step
+        # chain always completes before the answer starts appearing.
+        text_buffer: list[str] = []
+        tools_in_flight = 0    # incremented on_tool_start, decremented on_tool_end
+        tools_ever_started = False  # True once any tool_start fires
+        text_flushed = False   # True after the buffer has been flushed for the first time
+
+        async def flush_text_buffer():
+            """Yield all buffered text chunks, clear the buffer, and mark as flushed."""
+            nonlocal text_flushed
+            for chunk_text in text_buffer:
+                yield f"data: {json.dumps({'type': 'chunk', 'text': chunk_text})}\n\n"
+            text_buffer.clear()
+            text_flushed = True
+
+        try:
+            async for event in _agent.astream_events(
+                {"messages": [("user", payload.message)]},
+                config=config,
+                version="v2",
+            ):
+                kind = event["event"]
+
+                # ── Tool is about to run ─────────────────────────────────────
+                if kind == "on_tool_start":
+                    tools_in_flight += 1
+                    tools_ever_started = True
+                    tool_name = event.get("name", "")
+
+                    if tool_name == "execute_sql_query":
+                        tool_input = event.get("data", {}).get("input", {}) or {}
+                        query = tool_input.get("query", "")
+                        yield f"data: {json.dumps({'type': 'step', 'label': 'Querying database', 'detail': query[:120]})}\n\n"
+
+                    elif tool_name == "generate_report":
+                        tool_input = event.get("data", {}).get("input", {}) or {}
+                        title = tool_input.get("title", "")
+                        yield f"data: {json.dumps({'type': 'step', 'label': 'Generating report', 'detail': title})}\n\n"
+
+                    else:
+                        yield f"data: {json.dumps({'type': 'step', 'label': f'Running {tool_name}', 'detail': ''})}\n\n"
+
+                # ── Tool finished ────────────────────────────────────────────
+                elif kind == "on_tool_end":
+                    tools_in_flight -= 1
+                    raw_output = event.get("data", {}).get("output", "") or ""
+
+                    # LangGraph may wrap the tool return value in a ToolMessage
+                    # object. Extract the plain string content from it.
+                    if hasattr(raw_output, "content"):
+                        output = raw_output.content or ""
+                        if isinstance(output, list):
+                            output = " ".join(
+                                b.get("text", "") if isinstance(b, dict) else str(b)
+                                for b in output
+                            )
+                    elif isinstance(raw_output, str):
+                        output = raw_output
+                    else:
+                        output = str(raw_output)
+
+                    if output.startswith("Error:"):
+                        yield f"data: {json.dumps({'type': 'step', 'label': 'Query failed', 'detail': ''})}\n\n"
+
+                    elif output.startswith("reports/"):
+                        report_path = output
+                        yield f"data: {json.dumps({'type': 'step', 'label': 'Report saved', 'detail': ''})}\n\n"
+
+                    elif output == "No results found.":
+                        yield f"data: {json.dumps({'type': 'step', 'label': '0 rows returned', 'detail': ''})}\n\n"
+
+                    else:
+                        # Count data rows (lines minus the TSV header row)
+                        lines = [l for l in output.strip().splitlines() if l.strip()]
+                        row_count = max(0, len(lines) - 1)
+                        label = f"{row_count} row{'s' if row_count != 1 else ''} returned"
+                        yield f"data: {json.dumps({'type': 'step', 'label': label, 'detail': ''})}\n\n"
+
+                    # If no more tools are running, flush buffered text now so
+                    # the answer starts streaming right after the last step.
+                    if tools_in_flight == 0:
+                        async for sse in flush_text_buffer():
+                            yield sse
+
+                # ── LLM is streaming its final answer ────────────────────────
+                elif kind == "on_chat_model_stream":
+                    chunk = event.get("data", {}).get("chunk")
+                    if chunk is None:
+                        continue
+
+                    # Skip chunks that contain tool call artifacts — these are
+                    # not real text and would appear as garbled JSON in the answer.
+                    tool_call_chunks = getattr(chunk, "tool_call_chunks", None) or []
+                    if tool_call_chunks:
+                        continue
+
+                    content = getattr(chunk, "content", "")
+
+                    texts: list[str] = []
+                    if isinstance(content, str) and content:
+                        texts.append(content)
+                    elif isinstance(content, list):
+                        for block in content:
+                            if isinstance(block, dict) and block.get("type") == "text":
+                                t = block.get("text", "")
+                                if t:
+                                    texts.append(t)
+
+                    for t in texts:
+                        should_buffer = (
+                            tools_ever_started           # tools have run or are running
+                            and (tools_in_flight > 0     # a tool is still active
+                                 or not text_flushed)    # or flush hasn't happened yet
+                        )
+                        if should_buffer:
+                            text_buffer.append(t)
+                        else:
+                            # Direct answer (no tools), or post-flush streaming
+                            yield f"data: {json.dumps({'type': 'chunk', 'text': t})}\n\n"
+
+                # ── Collect token usage from LLM call ends ───────────────────
+                elif kind == "on_chat_model_end":
+                    meta = event.get("data", {}).get("output")
+                    usage_meta = getattr(meta, "usage_metadata", None) if meta else None
+                    if usage_meta:
+                        total_input += usage_meta.get("input_tokens", 0)
+                        total_output += usage_meta.get("output_tokens", 0)
+
+        except Exception as exc:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
+            return
+
+        # Flush anything left (safety net — normally empty by this point)
+        async for sse in flush_text_buffer():
+            yield sse
+
+        # ── Final done event ─────────────────────────────────────────────────
+        input_cost = (total_input / 1000) * INPUT_TOKEN_PRICE_PER_1K
+        output_cost = (total_output / 1000) * OUTPUT_TOKEN_PRICE_PER_1K
+        usage = {
+            "input_tokens": total_input,
+            "output_tokens": total_output,
+            "total_tokens": total_input + total_output,
+            "cost_usd": round(input_cost + output_cost, 6),
+        }
+        accumulate_usage(TokenUsage(**usage))
+
+        yield f"data: {json.dumps({'type': 'done', 'thread_id': payload.thread_id, 'report_path': report_path, 'usage': usage})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
@@ -212,6 +403,89 @@ def find_report_path(messages: list) -> str | None:
             return content
 
     return None
+
+
+def extract_steps(messages: list) -> list[AgentStep]:
+    """
+    Walk the LangGraph message list and build a step chain for the frontend.
+
+    The ReAct agent produces a repeating pattern of:
+      AIMessage (with tool_calls)  →  ToolMessage (with the tool's output)
+
+    This function translates each pair into a human-readable AgentStep:
+    - For an AIMessage that contains tool_calls, we emit a "Running SQL" or
+      "Generating report" step showing the tool input as the detail.
+    - For the matching ToolMessage we emit a "returned N rows" or error step
+      showing a short preview of what the tool returned.
+    - The final AIMessage (the plain text answer) is NOT included because the
+      frontend already renders it as the main reply bubble.
+
+    Args:
+        messages: The full message list returned by agent.invoke().
+
+    Returns:
+        A list of AgentStep objects ordered chronologically.
+    """
+    steps = []
+
+    for message in messages:
+        class_name = type(message).__name__
+
+        if class_name == "AIMessage":
+            tool_calls = getattr(message, "tool_calls", []) or []
+            for tc in tool_calls:
+                tool_name = tc.get("name", "")
+                tool_args = tc.get("args", {})
+
+                if tool_name == "execute_sql_query":
+                    query = tool_args.get("query", "").strip()
+                    # Trim very long queries to keep the UI tidy
+                    short_query = query[:120] + "…" if len(query) > 120 else query
+                    steps.append(AgentStep(
+                        label="Running SQL",
+                        detail=short_query,
+                    ))
+
+                elif tool_name == "generate_report":
+                    title = tool_args.get("title", "")
+                    report_type = tool_args.get("report_type", "")
+                    steps.append(AgentStep(
+                        label="Generating report",
+                        detail=f"{report_type}: {title}" if title else report_type,
+                    ))
+
+                else:
+                    # Generic fallback for any future tools
+                    steps.append(AgentStep(
+                        label=f"Calling {tool_name}",
+                        detail=str(tool_args)[:120],
+                    ))
+
+        elif class_name == "ToolMessage":
+            content = getattr(message, "content", "") or ""
+
+            if isinstance(content, str) and content.startswith("Error:"):
+                steps.append(AgentStep(
+                    label="Tool call failed",
+                    detail=content[:120],
+                ))
+            elif isinstance(content, str) and content.startswith("reports/"):
+                steps.append(AgentStep(
+                    label="Report saved",
+                    detail=content,
+                ))
+            else:
+                # Count the number of data rows returned (header + rows)
+                lines = [l for l in content.strip().splitlines() if l.strip()]
+                row_count = max(0, len(lines) - 1)  # subtract header row
+                preview = lines[0][:80] if lines else ""
+                label = f"{row_count} row{'s' if row_count != 1 else ''} returned"
+                steps.append(AgentStep(
+                    label=label,
+                    detail=preview,
+                ))
+
+    return steps
 
 
 @app.get("/reports/{filename}")
