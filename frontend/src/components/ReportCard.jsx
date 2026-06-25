@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { FileText, Download } from "lucide-react";
 
 /**
  * Derive a human-readable title from the report filename.
@@ -104,16 +105,7 @@ export default function ReportCard({ reportPath }) {
       <div className="report-card-header">
         <div className="report-card-title-row">
           <span className="report-card-icon" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect
-                x="2" y="1" width="10" height="14"
-                rx="1.5" stroke="currentColor" strokeWidth="1.3"
-              />
-              <path
-                d="M5 5h6M5 8h6M5 11h4"
-                stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"
-              />
-            </svg>
+            <FileText size={16} strokeWidth={2} />
           </span>
           <span className="report-card-title">{title}</span>
         </div>
@@ -156,12 +148,7 @@ export default function ReportCard({ reportPath }) {
           onClick={handleDownloadPdf}
           title="Download as a PDF file directly"
         >
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
-            <path
-              d="M2 9v2.5h9V9M6.5 1v7M4 6l2.5 2.5L9 6"
-              stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"
-            />
-          </svg>
+          <Download size={14} strokeWidth={2.5} />
           Download PDF
         </button>
 
@@ -171,12 +158,7 @@ export default function ReportCard({ reportPath }) {
           disabled={!markdownContent}
           title="Download the raw markdown file"
         >
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
-            <path
-              d="M2 9v2.5h9V9M6.5 1v7M4 6l2.5 2.5L9 6"
-              stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"
-            />
-          </svg>
+          <Download size={14} strokeWidth={2.5} />
           Download .md
         </button>
       </div>

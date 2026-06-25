@@ -40,9 +40,16 @@ body {
 
 .app-shell {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     height: 100vh;
     min-height: 0;
+}
+
+.app-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0; /* prevent flex blowout */
 }
 
 /* =============================================
@@ -73,6 +80,29 @@ body {
     align-items: center;
 }
 
+.topbar-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: var(--space-1);
+    transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+.topbar-icon-btn:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+}
+
+.topbar-icon-btn:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+}
+
 .topbar-wordmark {
     font-family: var(--font-display);
     font-size: var(--text-lg);
@@ -83,45 +113,7 @@ body {
     min-width: 0;
 }
 
-.topbar-new-chat {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-family: var(--font-body);
-    font-size: var(--text-sm);
-    font-weight: 500;
-    color: var(--color-text-muted);
-    background: transparent;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-2) var(--space-4);
-    cursor: pointer;
-    white-space: nowrap;
-    transition:
-        color var(--dur-fast) var(--ease-out),
-        border-color var(--dur-fast) var(--ease-out),
-        background var(--dur-fast) var(--ease-out);
-}
 
-.topbar-new-chat:hover:not(:disabled) {
-    color: var(--color-text);
-    border-color: var(--color-border-strong);
-    background: var(--color-surface-hover);
-}
-
-.topbar-new-chat:focus-visible {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 2px;
-}
-
-.topbar-new-chat:active:not(:disabled) {
-    transform: translateY(1px);
-}
-
-.topbar-new-chat:disabled {
-    opacity: 0.32;
-    cursor: not-allowed;
-}
 
 /* Topbar right cluster */
 .topbar-right {

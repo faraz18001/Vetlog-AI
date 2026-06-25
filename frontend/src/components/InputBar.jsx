@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { ArrowUp } from 'lucide-react'
 
 const PLACEHOLDER = 'Ask about your patients, treatments, or clinic activity…'
 
@@ -52,9 +53,7 @@ export default function InputBar({ onSend, isLoading }) {
           disabled={!canSend}
           aria-label="Send message"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <path d="M8 13V3M3 8l5-5 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <ArrowUp size={16} strokeWidth={2.5} />
         </button>
       </div>
       <p className="input-hint">

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import MessageBubble from './MessageBubble.jsx'
 
+import { PawPrint } from 'lucide-react'
+
 const SUGGESTED = [
   'Who was treated today?',
   'Show me this week\'s cases',
@@ -12,10 +14,7 @@ function EmptyState({ onPrompt }) {
   return (
     <div className="chat-empty">
       <div className="chat-empty-icon" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <circle cx="14" cy="14" r="12" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M9 14h10M14 9v10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
+        <PawPrint size={28} strokeWidth={1.5} />
       </div>
       <h1 className="chat-empty-title">How can I help?</h1>
       <p className="chat-empty-sub">

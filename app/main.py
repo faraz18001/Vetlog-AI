@@ -3,7 +3,7 @@ import os
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.agent import initialize_agent
@@ -217,9 +217,11 @@ async def chat_stream(payload: ChatRequest):
         # They are flushed only after the last tool_end, so the step
         # chain always completes before the answer starts appearing.
         text_buffer: list[str] = []
-        tools_in_flight = 0    # incremented on_tool_start, decremented on_tool_end
+        tools_in_flight = 0  # incremented on_tool_start, decremented on_tool_end
         tools_ever_started = False  # True once any tool_start fires
-        text_flushed = False   # True after the buffer has been flushed for the first time
+        text_flushed = (
+            False  # True after the buffer has been flushed for the first time
+        )
 
         async def flush_text_buffer():
             """Yield all buffered text chunks, clear the buffer, and mark as flushed."""
@@ -237,7 +239,7 @@ async def chat_stream(payload: ChatRequest):
             ):
                 kind = event["event"]
 
-                # ── Tool is about to run ─────────────────────────────────────
+                # Tool is about to run
                 if kind == "on_tool_start":
                     tools_in_flight += 1
                     tools_ever_started = True
@@ -256,7 +258,7 @@ async def chat_stream(payload: ChatRequest):
                     else:
                         yield f"data: {json.dumps({'type': 'step', 'label': f'Running {tool_name}', 'detail': ''})}\n\n"
 
-                # ── Tool finished ────────────────────────────────────────────
+                # Tool finished
                 elif kind == "on_tool_end":
                     tools_in_flight -= 1
                     raw_output = event.get("data", {}).get("output", "") or ""
@@ -289,7 +291,9 @@ async def chat_stream(payload: ChatRequest):
                         # Count data rows (lines minus the TSV header row)
                         lines = [l for l in output.strip().splitlines() if l.strip()]
                         row_count = max(0, len(lines) - 1)
-                        label = f"{row_count} row{'s' if row_count != 1 else ''} returned"
+                        label = (
+                            f"{row_count} row{'s' if row_count != 1 else ''} returned"
+                        )
                         yield f"data: {json.dumps({'type': 'step', 'label': label, 'detail': ''})}\n\n"
 
                     # If no more tools are running, flush buffered text now so
@@ -298,7 +302,7 @@ async def chat_stream(payload: ChatRequest):
                         async for sse in flush_text_buffer():
                             yield sse
 
-                # ── LLM is streaming its final answer ────────────────────────
+                # LLM is streaming its final answer
                 elif kind == "on_chat_model_stream":
                     chunk = event.get("data", {}).get("chunk")
                     if chunk is None:
@@ -324,9 +328,11 @@ async def chat_stream(payload: ChatRequest):
 
                     for t in texts:
                         should_buffer = (
-                            tools_ever_started           # tools have run or are running
-                            and (tools_in_flight > 0     # a tool is still active
-                                 or not text_flushed)    # or flush hasn't happened yet
+                            tools_ever_started  # tools have run or are running
+                            and (
+                                tools_in_flight > 0  # a tool is still active
+                                or not text_flushed
+                            )  # or flush hasn't happened yet
                         )
                         if should_buffer:
                             text_buffer.append(t)
@@ -334,7 +340,7 @@ async def chat_stream(payload: ChatRequest):
                             # Direct answer (no tools), or post-flush streaming
                             yield f"data: {json.dumps({'type': 'chunk', 'text': t})}\n\n"
 
-                # ── Collect token usage from LLM call ends ───────────────────
+                # Collect token usage from LLM call ends
                 elif kind == "on_chat_model_end":
                     meta = event.get("data", {}).get("output")
                     usage_meta = getattr(meta, "usage_metadata", None) if meta else None
@@ -350,7 +356,7 @@ async def chat_stream(payload: ChatRequest):
         async for sse in flush_text_buffer():
             yield sse
 
-        # ── Final done event ─────────────────────────────────────────────────
+        # Final done event
         input_cost = (total_input / 1000) * INPUT_TOKEN_PRICE_PER_1K
         output_cost = (total_output / 1000) * OUTPUT_TOKEN_PRICE_PER_1K
         usage = {
@@ -441,49 +447,61 @@ def extract_steps(messages: list) -> list[AgentStep]:
                     query = tool_args.get("query", "").strip()
                     # Trim very long queries to keep the UI tidy
                     short_query = query[:120] + "…" if len(query) > 120 else query
-                    steps.append(AgentStep(
-                        label="Running SQL",
-                        detail=short_query,
-                    ))
+                    steps.append(
+                        AgentStep(
+                            label="Running SQL",
+                            detail=short_query,
+                        )
+                    )
 
                 elif tool_name == "generate_report":
                     title = tool_args.get("title", "")
                     report_type = tool_args.get("report_type", "")
-                    steps.append(AgentStep(
-                        label="Generating report",
-                        detail=f"{report_type}: {title}" if title else report_type,
-                    ))
+                    steps.append(
+                        AgentStep(
+                            label="Generating report",
+                            detail=f"{report_type}: {title}" if title else report_type,
+                        )
+                    )
 
                 else:
                     # Generic fallback for any future tools
-                    steps.append(AgentStep(
-                        label=f"Calling {tool_name}",
-                        detail=str(tool_args)[:120],
-                    ))
+                    steps.append(
+                        AgentStep(
+                            label=f"Calling {tool_name}",
+                            detail=str(tool_args)[:120],
+                        )
+                    )
 
         elif class_name == "ToolMessage":
             content = getattr(message, "content", "") or ""
 
             if isinstance(content, str) and content.startswith("Error:"):
-                steps.append(AgentStep(
-                    label="Tool call failed",
-                    detail=content[:120],
-                ))
+                steps.append(
+                    AgentStep(
+                        label="Tool call failed",
+                        detail=content[:120],
+                    )
+                )
             elif isinstance(content, str) and content.startswith("reports/"):
-                steps.append(AgentStep(
-                    label="Report saved",
-                    detail=content,
-                ))
+                steps.append(
+                    AgentStep(
+                        label="Report saved",
+                        detail=content,
+                    )
+                )
             else:
                 # Count the number of data rows returned (header + rows)
                 lines = [l for l in content.strip().splitlines() if l.strip()]
                 row_count = max(0, len(lines) - 1)  # subtract header row
                 preview = lines[0][:80] if lines else ""
                 label = f"{row_count} row{'s' if row_count != 1 else ''} returned"
-                steps.append(AgentStep(
-                    label=label,
-                    detail=preview,
-                ))
+                steps.append(
+                    AgentStep(
+                        label=label,
+                        detail=preview,
+                    )
+                )
 
     return steps
 
@@ -509,13 +527,14 @@ def get_report_content(filename: str):
     return {"filename": filename, "content": content}
 
 
-@app.get("/reports/{filename}/pdf")
-def export_report_pdf(filename: str):
+@app.get("/reports/{filename}/export", response_class=HTMLResponse)
+def export_report_html(filename: str):
     """
-    Return the report as a downloadable PDF file.
+    Return the report as a styled, print-ready HTML page.
 
-    Converts the saved markdown to HTML server-side with weasyprint, then
-    returns the PDF as a direct download (no new tab, no print dialog).
+    The frontend opens this in a new browser tab. The page is styled with
+    print CSS so the user can press Ctrl+P → Save as PDF to get a clean PDF
+    without requiring any server-side PDF library.
 
     Args:
         filename: The report's base filename (e.g. 'daily_summary_2025-06-25.md').
@@ -528,24 +547,73 @@ def export_report_pdf(filename: str):
     with open(filepath, "r") as f:
         md_content = f.read()
 
-    import markdown as md_lib
-    from weasyprint import HTML as WeasyprintHTML
+    try:
+        import markdown as md_lib
 
-    body_html = md_lib.markdown(md_content, extensions=["tables", "fenced_code"])
+        body_html = md_lib.markdown(md_content, extensions=["tables", "fenced_code"])
+    except ImportError:
+        # If the markdown library isn't installed, wrap the raw text in a <pre>.
+        body_html = f"<pre>{md_content}</pre>"
+
     report_title = filename.replace("_", " ").replace(".md", "").title()
 
-    template_path = os.path.join(os.path.dirname(__file__), "report_template.html")
-    with open(template_path, "r") as f:
-        html = f.read().replace("{{title}}", report_title).replace("{{body_html}}", body_html)
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>{report_title}</title>
+      <style>
+        body {{
+          font-family: 'Segoe UI', Arial, sans-serif;
+          max-width: 820px;
+          margin: 48px auto;
+          padding: 0 24px;
+          color: #1a1a1a;
+          line-height: 1.7;
+        }}
+        h1, h2, h3 {{ font-weight: 600; margin-top: 1.5em; }}
+        h2 {{ font-size: 1.5rem; border-bottom: 2px solid #e5e5e5; padding-bottom: 8px; }}
+        h3 {{ font-size: 1.15rem; }}
+        table {{
+          width: 100%;
+          border-collapse: collapse;
+          margin: 1.25em 0;
+          font-size: 0.9rem;
+        }}
+        th {{
+          background: #f4f4f5;
+          font-weight: 600;
+          text-align: left;
+          padding: 10px 14px;
+          border: 1px solid #d4d4d8;
+        }}
+        td {{
+          padding: 8px 14px;
+          border: 1px solid #e4e4e7;
+          vertical-align: top;
+        }}
+        tr:nth-child(even) td {{ background: #fafafa; }}
+        hr {{ border: none; border-top: 1px solid #e5e5e5; margin: 2em 0; }}
+        em {{ color: #71717a; font-size: 0.875rem; }}
+        code {{ background: #f4f4f5; padding: 2px 6px; border-radius: 4px; }}
+        @media print {{
+          body {{ margin: 24px; }}
+          @page {{ margin: 2cm; }}
+        }}
+      </style>
+    </head>
+    <body>
+      {body_html}
+      <script>
+        // Auto-open the print dialog so the user can save directly as PDF.
+        window.onload = function() {{ window.print(); }};
+      </script>
+    </body>
+    </html>
+    """
 
-    pdf_bytes = WeasyprintHTML(string=html).write_pdf()
-
-    pdf_filename = filename.replace(".md", ".pdf")
-    return StreamingResponse(
-        iter([pdf_bytes]),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{pdf_filename}"'},
-    )
+    return HTMLResponse(content=html)
 
 
 @app.get("/usage/", response_model=UsageStats)

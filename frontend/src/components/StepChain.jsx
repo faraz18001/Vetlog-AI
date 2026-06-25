@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { List } from "lucide-react";
 
 /** Dot icon for each node on the timeline */
 function StepDot({ label, isLast, isStreaming }) {
@@ -52,10 +53,7 @@ export default function StepChain({ steps, isStreaming }) {
         onClick={() => setExpanded(true)}
         aria-label="Show agent steps"
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
-          <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.3" />
-          <path d="M3 5h4M5 3v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-        </svg>
+        <List size={12} strokeWidth={2.5} aria-hidden />
         {steps.length} step{steps.length !== 1 ? "s" : ""}
       </button>
     );
