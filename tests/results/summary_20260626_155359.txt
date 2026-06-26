@@ -1,0 +1,17 @@
+Test Results — 2026-06-26 15:53
+Total    : 10
+Passed   : 9/10
+SQL OK   : 9/10
+Hal OK   : 9/10
+Errors   : 0
+
+  PASS  D1     SQL=OK  HAL=OK    
+  PASS  D2     SQL=OK  HAL=OK    
+  PASS  D3     SQL=OK  HAL=OK    
+  PASS  D4     SQL=OK  HAL=OK    
+  FAIL  D5     SQL=XX  HAL=XX    
+  PASS  S1     SQL=OK  HAL=OK    
+  PASS  S2     SQL=OK  HAL=OK    
+  PASS  S3     SQL=OK  HAL=OK    
+  PASS  S4     SQL=OK  HAL=OK    
+  PASS  T1     SQL=OK  HAL=OK    

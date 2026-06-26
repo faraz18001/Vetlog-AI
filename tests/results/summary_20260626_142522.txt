@@ -1,0 +1,17 @@
+Test Results — 2026-06-26 14:25
+Total    : 10
+Passed   : 1/10
+SQL OK   : 1/10
+Hal OK   : 1/10
+Errors   : 9
+
+  PASS  D1     SQL=OK  HAL=OK    
+  FAIL  D2     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  D3     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  D4     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  D5     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  S1     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  S2     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  S3     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  S4     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  T1     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 

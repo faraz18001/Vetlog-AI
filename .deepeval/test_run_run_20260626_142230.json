@@ -1,0 +1,165 @@
+{
+  "run_name": "run_20260626_142230",
+  "test_cases": [
+    {
+      "name": "D1",
+      "input": "Did Dr. Faraz treat a dog named Max?",
+      "actual_output": "Yes \u2013 Dr.\u202fFaraz has treated a dog named **Max** on several occasions.  \nHere are a few excerpts from the chat:\n\n| Sender",
+      "success": true,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": true,
+          "score": 1.0
+        },
+        "HallucinationMetric": {
+          "success": true,
+          "score": 1.0
+        }
+      }
+    },
+    {
+      "name": "D2",
+      "input": "What did Nurse Ali administer to Coco?",
+      "actual_output": "Nurse\u202fAli has given Coco the following treatments:\n\n| Date & Time | Medication / Treatment | Dosage |\n|-------------|---",
+      "success": false,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": false,
+          "score": 0.0
+        },
+        "HallucinationMetric": {
+          "success": false,
+          "score": 0.0
+        }
+      }
+    },
+    {
+      "name": "D3",
+      "input": "Was there a donation from Paws Welfare Trust?",
+      "actual_output": "Yes \u2013 there were several donations from **Paws Welfare Trust**.  \nHere are a few examples from the chat:\n\n| Sender | Tex",
+      "success": false,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": false,
+          "score": 0.0
+        },
+        "HallucinationMetric": {
+          "success": false,
+          "score": 0.0
+        }
+      }
+    },
+    {
+      "name": "D4",
+      "input": "Which animals were checked in by Receptionist Sara?",
+      "actual_output": "",
+      "success": false,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": false,
+          "score": 0.0
+        },
+        "HallucinationMetric": {
+          "success": false,
+          "score": 0.0
+        }
+      }
+    },
+    {
+      "name": "D5",
+      "input": "Who was on duty at 10:00 AM?",
+      "actual_output": "Here are the messages that mention who was on duty at **10:00\u202fAM**:\n\n| Date (captured) | Sender | Message snippet |\n|---",
+      "success": false,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": false,
+          "score": 0.0
+        },
+        "HallucinationMetric": {
+          "success": false,
+          "score": 0.0
+        }
+      }
+    },
+    {
+      "name": "S1",
+      "input": "Has any animal been treated for jaundice?",
+      "actual_output": "Yes\u2014several animals have been treated for jaundice, including Coco the parrot, Lola the parrot, Luna the cat, Oreo the r",
+      "success": true,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": true,
+          "score": 1.0
+        },
+        "HallucinationMetric": {
+          "success": true,
+          "score": 1.0
+        }
+      }
+    },
+    {
+      "name": "S2",
+      "input": "Did anyone treat a German Shepherd named Rocky?",
+      "actual_output": "Yes\u2014Rocky the German\u202fShepherd has been treated several times. For example:\n\n| Sender | Message snippet | Date |\n|-------",
+      "success": false,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": false,
+          "score": 0.0
+        },
+        "HallucinationMetric": {
+          "success": false,
+          "score": 0.0
+        }
+      }
+    },
+    {
+      "name": "S3",
+      "input": "Which doctor treated the Golden Retriever?",
+      "actual_output": "The Golden Retriever was treated by **Dr. Sarah\u202fJenkins** and **Dr. Faraz**.",
+      "success": false,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": false,
+          "score": 0.0
+        },
+        "HallucinationMetric": {
+          "success": false,
+          "score": 0.0
+        }
+      }
+    },
+    {
+      "name": "S4",
+      "input": "Was any surgery done on a Labrador?",
+      "actual_output": "Yes \u2013 there were three scheduled surgeries for Labradors:\n\n| Sender | Message snippet | Date |\n|--------|---------------",
+      "success": false,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": false,
+          "score": 0.0
+        },
+        "HallucinationMetric": {
+          "success": false,
+          "score": 0.0
+        }
+      }
+    },
+    {
+      "name": "T1",
+      "input": "How many patients were discharged after kidney disease treatment?",
+      "actual_output": "There were 3 patients discharged after kidney disease treatment.",
+      "success": false,
+      "metrics": {
+        "SqlCorrectnessMetric": {
+          "success": false,
+          "score": 0.0
+        },
+        "HallucinationMetric": {
+          "success": false,
+          "score": 0.0
+        }
+      }
+    }
+  ]
+}

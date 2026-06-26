@@ -1,0 +1,17 @@
+Test Results — 2026-06-26 14:22
+Total    : 10
+Passed   : 2/10
+SQL OK   : 2/10
+Hal OK   : 2/10
+Errors   : 8
+
+  PASS  D1     SQL=OK  HAL=OK    
+  FAIL  D2     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  D3     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  D4     SQL=XX  HAL=XX    ResponseError: Internal Server Error (ref: 9b3f8c3
+  FAIL  D5     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  PASS  S1     SQL=OK  HAL=OK    
+  FAIL  S2     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  S3     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  S4     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
+  FAIL  T1     SQL=XX  HAL=XX    Metrics: Base Metric (score: 0.0, threshold: 1.0, 
