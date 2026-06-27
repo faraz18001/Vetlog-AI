@@ -95,130 +95,44 @@ def build_ollama_model(base_url: str, model_name: str, api_key: str):
     )
 
 
-def build_openai_model():
+def build_openai_compatible_model(provider: str, api_key: str, model_name: str):
     """
-    Create a standard OpenAI ChatOpenAI client as a fallback provider.
-
-    Reads OPENAI_API_KEY and DEFAULT_MODEL from the environment.
-
+    Create a ChatOpenAI client for any OpenAI-compatible API endpoint.
+    
+    Args:
+        provider:   The provider name (e.g. 'groq', 'mistral', 'openrouter', 'openai').
+        api_key:    The API key for the provider.
+        model_name: The model identifier to use.
+        
     Returns:
-        A ChatOpenAI instance pointed at the OpenAI API.
+        A ChatOpenAI instance pointed at the correct API.
     """
+    base_urls = {
+        "groq": "https://api.groq.com/openai/v1",
+        "mistral": "https://api.mistral.ai/v1",
+        "cerebras": "https://api.cerebras.ai/v1",
+        "openrouter": "https://openrouter.ai/api/v1",
+        "openai": None  # Uses the default OpenAI URL
+    }
+    
     return ChatOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY", ""),
-        model=os.getenv("DEFAULT_MODEL", "gpt-4o"),
+        base_url=base_urls.get(provider),
+        api_key=api_key,
+        model=model_name,
         temperature=0.2,
+        default_headers={"HTTP-Referer": "https://vetlog.app"} if provider == "openrouter" else None
     )
+
 
 
 def build_gemini_model(api_key: str, model_name: str):
     """
     Create a ChatGoogleGenerativeAI client for the Google Gemini API.
-
-    Uses the Gemini Developer API (not Vertex AI). The API key is read from
-    GOOGLE_API_KEY (or GEMINI_API_KEY as fallback) in the environment.
-
-    Args:
-        api_key:    Google AI API key from Google AI Studio.
-        model_name: The Gemini model identifier (e.g. 'gemini-2.0-flash').
-
-    Returns:
-        A ChatGoogleGenerativeAI instance ready for use.
     """
     return ChatGoogleGenerativeAI(
         model=model_name,
         api_key=api_key,
         temperature=0.2,
-    )
-
-
-def build_groq_model(api_key: str, model_name: str):
-    """
-    Create a ChatOpenAI client for the Groq API.
-
-    Groq exposes an OpenAI-compatible endpoint so we use ChatOpenAI with
-    a custom base URL. No extra package is needed.
-
-    Args:
-        api_key:    Groq API key from https://console.groq.com/keys.
-        model_name: The Groq model identifier (e.g. 'llama-3.3-70b-versatile').
-
-    Returns:
-        A ChatOpenAI instance pointed at the Groq API.
-    """
-    return ChatOpenAI(
-        base_url="https://api.groq.com/openai/v1",
-        api_key=api_key,
-        model=model_name,
-        temperature=0.2,
-    )
-
-
-def build_mistral_model(api_key: str, model_name: str):
-    """
-    Create a ChatOpenAI client for the Mistral API.
-
-    Mistral exposes an OpenAI-compatible endpoint so we use ChatOpenAI with
-    a custom base URL. No extra package is needed.
-
-    Args:
-        api_key:    Mistral API key from https://console.mistral.ai.
-        model_name: The Mistral model identifier (e.g. 'mistral-small-latest').
-
-    Returns:
-        A ChatOpenAI instance pointed at the Mistral API.
-    """
-    return ChatOpenAI(
-        base_url="https://api.mistral.ai/v1",
-        api_key=api_key,
-        model=model_name,
-        temperature=0.2,
-    )
-
-
-def build_cerebras_model(api_key: str, model_name: str):
-    """
-    Create a ChatOpenAI client for the Cerebras API.
-
-    Cerebras exposes an OpenAI-compatible endpoint so we use ChatOpenAI with
-    a custom base URL. No extra package is needed.
-
-    Args:
-        api_key:    Cerebras API key from https://console.cerebras.ai.
-        model_name: The Cerebras model identifier (e.g. 'llama-3.3-70b').
-
-    Returns:
-        A ChatOpenAI instance pointed at the Cerebras API.
-    """
-    return ChatOpenAI(
-        base_url="https://api.cerebras.ai/v1",
-        api_key=api_key,
-        model=model_name,
-        temperature=0.2,
-    )
-
-
-def build_openrouter_model(api_key: str, model_name: str):
-    """
-    Create a ChatOpenAI client for the OpenRouter API.
-
-    OpenRouter exposes an OpenAI-compatible endpoint that aggregates many
-    free models from multiple providers. We use ChatOpenAI with a custom
-    base URL. No extra package is needed.
-
-    Args:
-        api_key:    OpenRouter API key from https://openrouter.ai/keys.
-        model_name: The model identifier (e.g. 'auto:free' for smart routing).
-
-    Returns:
-        A ChatOpenAI instance pointed at the OpenRouter API.
-    """
-    return ChatOpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=api_key,
-        model=model_name,
-        temperature=0.2,
-        default_headers={"HTTP-Referer": "https://vetlog.app"},
     )
 
 
@@ -252,31 +166,29 @@ def get_llm_model():
             model_name=os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite"),
         )
 
-    if provider == "groq":
-        return build_groq_model(
-            api_key=os.getenv("GROQ_API_KEY", ""),
-            model_name=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-        )
+    # For all other OpenAI-compatible providers, grab their specific env vars
+    env_prefixes = {
+        "groq": "GROQ",
+        "mistral": "MISTRAL",
+        "cerebras": "CEREBRAS",
+        "openrouter": "OPENROUTER",
+        "openai": "OPENAI"
+    }
+    
+    prefix = env_prefixes.get(provider, "OPENAI")
+    
+    if prefix == "OPENAI":
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        model_name = os.getenv("DEFAULT_MODEL", "gpt-4o")
+    else:
+        api_key = os.getenv(f"{prefix}_API_KEY", "")
+        model_name = os.getenv(f"{prefix}_MODEL", "")
 
-    if provider == "mistral":
-        return build_mistral_model(
-            api_key=os.getenv("MISTRAL_API_KEY", ""),
-            model_name=os.getenv("MISTRAL_MODEL", "mistral-small-latest"),
-        )
-
-    if provider == "cerebras":
-        return build_cerebras_model(
-            api_key=os.getenv("CEREBRAS_API_KEY", ""),
-            model_name=os.getenv("CEREBRAS_MODEL", "llama-3.3-70b"),
-        )
-
-    if provider == "openrouter":
-        return build_openrouter_model(
-            api_key=os.getenv("OPENROUTER_API_KEY", ""),
-            model_name=os.getenv("OPENROUTER_MODEL", "auto:free"),
-        )
-
-    return build_openai_model()
+    return build_openai_compatible_model(
+        provider=provider if provider in env_prefixes else "openai",
+        api_key=api_key,
+        model_name=model_name
+    )
 
 
 def initialize_agent():
