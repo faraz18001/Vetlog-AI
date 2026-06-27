@@ -10,6 +10,13 @@ from app.tools import execute_sql_query, generate_report
 
 tools = [execute_sql_query, generate_report]
 
+"""
+Right now the agent is not self correcting meaning that if it threw a wrong query
+it won't fix it self
+do we need a multi-step self correcting agent? idk
+"""
+
+
 # Shared checkpointer — keeps conversation memory across requests as long
 # as the server process is running.
 agent_checkpointer = MemorySaver()
@@ -41,6 +48,9 @@ Examples:
 - Q: "Did Dr. Faraz treat Max?" → SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'
 - Q: "Total donations from Mrs. Fatima" → SELECT text FROM raw_messages WHERE text LIKE '%Mrs. Fatima%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'
 - Q: "Generate a donation report" → query donations, then call generate_report(report_type='donation_ledger', ...), then reply with one sentence only."""
+
+"""All of the build model functios are same we can literally creata  model class here and save
+al ot lines of code and make this file less messy."""
 
 
 def build_ollama_model(base_url: str, model_name: str, api_key: str):
@@ -290,6 +300,22 @@ def initialize_agent():
     )
 
     return agent_graph
+
+
+_agent_instance = None
+
+def get_current_agent():
+    """Returns the singleton agent instance, initializing it if necessary."""
+    global _agent_instance
+    if _agent_instance is None:
+        _agent_instance = initialize_agent()
+    return _agent_instance
+
+def reload_agent():
+    """Forces the agent to re-initialize with the current environment variables."""
+    global _agent_instance
+    _agent_instance = initialize_agent()
+    return _agent_instance
 
 
 if __name__ == "__main__":
