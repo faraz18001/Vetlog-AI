@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import MessageBubble from './MessageBubble.jsx'
 
-import { PawPrint } from 'lucide-react'
+import { Dog } from 'lucide-react'
 
 const SUGGESTED = [
   'Who was treated today?',
@@ -14,7 +14,7 @@ function EmptyState({ onPrompt }) {
   return (
     <div className="chat-empty">
       <div className="chat-empty-icon" aria-hidden="true">
-        <PawPrint size={28} strokeWidth={1.5} />
+        <Dog size={28} strokeWidth={1.5} />
       </div>
       <h1 className="chat-empty-title">How can I help?</h1>
       <p className="chat-empty-sub">

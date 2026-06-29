@@ -49,6 +49,7 @@ Thumbs.db
 # Reports
 *.pdf
 *.md
+!README.md
 !project_plan.md
 !app/reports/
 

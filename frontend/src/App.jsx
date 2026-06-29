@@ -4,7 +4,7 @@ import ChatWindow from "./components/ChatWindow.jsx";
 import InputBar from "./components/InputBar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import SettingsModal from "./components/SettingsModal.jsx";
-import { Stethoscope, PanelLeft } from "lucide-react";
+import { HeartPulse, PanelLeft } from "lucide-react";
 import "./App.css";
 
 
@@ -40,7 +40,7 @@ export default function App() {
               <PanelLeft size={20} strokeWidth={2.5} />
             </button>
             <span className="topbar-brand-icon" style={{ marginLeft: 'var(--space-2)' }}>
-              <Stethoscope size={20} strokeWidth={2.5} />
+              <HeartPulse size={20} strokeWidth={2.5} />
             </span>
             <span className="topbar-wordmark">Vetlog AI</span>
           </div>

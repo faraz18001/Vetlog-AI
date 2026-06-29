@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Stethoscope } from "lucide-react";
+import { HeartPulse } from "lucide-react";
 import { motion } from "framer-motion";
 import ReportCard from "./ReportCard.jsx";
 import StepChain from "./StepChain.jsx";
@@ -53,7 +53,7 @@ export default function MessageBubble({ message }) {
         {isUser ? (
           "You"
         ) : (
-          <Stethoscope size={16} strokeWidth={2.5} />
+          <HeartPulse size={16} strokeWidth={2.5} />
         )}
       </div>
 

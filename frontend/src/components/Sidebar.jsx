@@ -1,4 +1,4 @@
-import { SquarePen, MessageSquare, Settings, User } from "lucide-react";
+import { MessageCirclePlus, ClipboardList, Settings, CircleUserRound } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Sidebar.css";
 
@@ -47,7 +47,7 @@ export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled, onOpenSe
           disabled={isNewChatDisabled}
           aria-label="Start a new chat"
         >
-          <SquarePen size={16} strokeWidth={2} />
+          <MessageCirclePlus size={16} strokeWidth={2} />
           <span>New Chat</span>
         </button>
       </div>
@@ -61,7 +61,7 @@ export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled, onOpenSe
               {section.chats.map((chat, j) => (
                 <li key={j}>
                   <button className="history-item-btn">
-                    <MessageSquare size={14} strokeWidth={2} className="history-item-icon" />
+                    <ClipboardList size={14} strokeWidth={2} className="history-item-icon" />
                     <span className="history-item-text">{chat}</span>
                   </button>
                 </li>
@@ -82,7 +82,7 @@ export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled, onOpenSe
         </button>
         <button className="sidebar-footer-btn profile-btn">
           <div className="profile-avatar">
-            <User size={14} strokeWidth={2} />
+            <CircleUserRound size={14} strokeWidth={2} />
           </div>
           <div className="profile-info">
             <span className="profile-name">Dr. Faraz</span>

@@ -1,40 +1,40 @@
-/* Hallmark · macrostructure: Chat Workbench · genre: atmospheric · theme: Slate Indigo
- * tone: utilitarian-atmospheric · anchor hue: indigo oklch(62% 0.22 280)
- * paper-band: dark (L < 30%) · display-style: geometric-sans (Outfit)
+/* Hallmark · macrostructure: Chat Workbench · genre: atmospheric · theme: Vet Terracotta
+ * tone: warm-organic · anchor hue: terracotta oklch(64% 0.14 20)
+ * paper-band: dark (L < 30%) · display-style: geometric-sans (DM Sans)
  * pre-emit critique: P5 H5 E5 S5 R5 V5
  */
 
 :root {
-    /* ---- Paper & Surface ---- */
-    --color-paper: oklch(12% 0.01 260);
-    --color-surface: oklch(16% 0.012 260);
-    --color-surface-hover: oklch(19% 0.013 260);
-    --color-surface-2: oklch(22% 0.015 260);
+    /* ---- Paper & Surface — warm charcoal (terracotta cast) ---- */
+    --color-paper: oklch(11% 0.005 25);
+    --color-surface: oklch(15% 0.007 25);
+    --color-surface-hover: oklch(18% 0.008 25);
+    --color-surface-2: oklch(21% 0.009 25);
 
     /* ---- Border ---- */
-    --color-border: oklch(100% 0 0 / 0.07);
-    --color-border-strong: oklch(100% 0 0 / 0.14);
+    --color-border: oklch(100% 0 0 / 0.08);
+    --color-border-strong: oklch(100% 0 0 / 0.16);
 
-    /* ---- Text ---- */
-    --color-text: oklch(91% 0.006 260);
-    --color-text-muted: oklch(56% 0.01 260);
-    --color-text-faint: oklch(36% 0.008 265);
+    /* ---- Text — warm (hue 35, soft warm neutral) ---- */
+    --color-text: oklch(93% 0.006 50);
+    --color-text-muted: oklch(60% 0.01 40);
+    --color-text-faint: oklch(40% 0.008 35);
 
-    /* ---- Accent — indigo ---- */
-    --color-accent: oklch(62% 0.22 280);
-    --color-accent-hover: oklch(67% 0.23 280);
-    --color-accent-subtle: oklch(62% 0.22 280 / 0.14);
-    --color-accent-fg: oklch(97% 0.006 280);
+    /* ---- Accent — terracotta / dusty rose (hue 20) ---- */
+    --color-accent: oklch(64% 0.14 20);
+    --color-accent-hover: oklch(69% 0.16 20);
+    --color-accent-subtle: oklch(64% 0.14 20 / 0.12);
+    --color-accent-fg: oklch(97% 0.005 50);
 
     /* ---- Semantic ---- */
-    --color-user-bubble: oklch(20% 0.015 260);
-    --color-focus: oklch(68% 0.23 280);
-    --color-error: oklch(62% 0.2 25);
-    --color-error-subtle: oklch(62% 0.2 25 / 0.12);
+    --color-user-bubble: oklch(18% 0.01 25);
+    --color-focus: oklch(70% 0.16 20);
+    --color-error: oklch(55% 0.22 25);
+    --color-error-subtle: oklch(55% 0.22 25 / 0.12);
 
     /* ---- Typography ---- */
-    --font-display: "Outfit", sans-serif;
-    --font-body: "Inter", sans-serif;
+    --font-display: "DM Sans", sans-serif;
+    --font-body: "Nunito Sans", sans-serif;
     --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
 
     /* ---- Type scale ---- */
