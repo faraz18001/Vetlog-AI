@@ -1,8 +1,9 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from datetime import datetime, timezone
-from app.config import DATABASE_URL
 
+from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+from app.config import DATABASE_URL
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine)
@@ -33,3 +34,9 @@ def get_session():
         return db
     finally:
         db.close()
+
+
+"""1.We will later add a table for saving users setting we can't put the model selection and api key inside the
+env
+2.we might need to grab the provided models on that specific select api so that user can easily select its model.
+3.we also need to add a database tables for keeping track of all the chat histrory on the sidebar"""
