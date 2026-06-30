@@ -36,6 +36,7 @@ export function useChat() {
         isError: false,
         usage: null,
         reportPath: null,
+        tablePath: null,
         steps: [],
       };
 
@@ -121,6 +122,7 @@ export function useChat() {
                         isStreaming: false,
                         usage: evt.usage ?? null,
                         reportPath: evt.report_path ?? null,
+                        tablePath: evt.table_path ?? null,
                       }
                     : m,
                 ),

@@ -107,6 +107,24 @@ def find_report_path(messages: list) -> str | None:
             return content
     return None
 
+def find_table_path(messages: list) -> str | None:
+    """Find the file path from a query_to_inline_table tool call.
+
+    The tool's output looks like:
+        reports/query_2025-06-30_143022.md
+        Rows: 150
+        Title: All Donations from June
+
+    We extract just the first line (the path).
+    """
+    for message in messages:
+        if type(message).__name__ != "ToolMessage":
+            continue
+        content = getattr(message, "content", "")
+        if isinstance(content, str) and content.startswith("reports/") and "Rows:" in content:
+            return content.splitlines()[0].strip()
+    return None
+
 def extract_steps(messages: list) -> list[AgentStep]:
     steps = []
     for message in messages:
@@ -120,6 +138,10 @@ def extract_steps(messages: list) -> list[AgentStep]:
                     query = tool_args.get("query", "").strip()
                     short_query = query[:120] + "…" if len(query) > 120 else query
                     steps.append(AgentStep(label="Running SQL", detail=short_query))
+                elif tool_name == "query_to_inline_table":
+                    query = tool_args.get("query", "").strip()
+                    short_query = query[:120] + "…" if len(query) > 120 else query
+                    steps.append(AgentStep(label="Querying full dataset", detail=short_query))
                 elif tool_name == "generate_report":
                     title = tool_args.get("title", "")
                     report_type = tool_args.get("report_type", "")
@@ -130,6 +152,9 @@ def extract_steps(messages: list) -> list[AgentStep]:
             content = getattr(message, "content", "") or ""
             if isinstance(content, str) and content.startswith("Error:"):
                 steps.append(AgentStep(label="Tool call failed", detail=content[:120]))
+            elif isinstance(content, str) and content.startswith("reports/") and "Rows:" in content:
+                first_line = content.splitlines()[0].strip()
+                steps.append(AgentStep(label="Table saved", detail=first_line))
             elif isinstance(content, str) and content.startswith("reports/"):
                 steps.append(AgentStep(label="Report saved", detail=content))
             else:
@@ -152,6 +177,7 @@ def chat_endpoint(payload: ChatRequest):
     usage = extract_usage(messages)
     accumulate_usage(usage)
     report_path = find_report_path(messages)
+    table_path = find_table_path(messages)
     steps = extract_steps(messages)
 
     return ChatResponse(
@@ -159,6 +185,7 @@ def chat_endpoint(payload: ChatRequest):
         thread_id=payload.thread_id,
         usage=usage,
         report_path=report_path,
+        table_path=table_path,
         steps=steps,
     )
 
@@ -169,6 +196,7 @@ async def chat_stream(payload: ChatRequest):
 
     async def event_generator():
         report_path = None
+        table_path = None
         total_input = 0
         total_output = 0
 
@@ -186,6 +214,10 @@ async def chat_stream(payload: ChatRequest):
                         tool_input = event.get("data", {}).get("input", {}) or {}
                         query = tool_input.get("query", "")
                         yield _sse({"type": "step", "label": "Querying database", "detail": query[:120]})
+                    elif tool_name == "query_to_inline_table":
+                        tool_input = event.get("data", {}).get("input", {}) or {}
+                        query = tool_input.get("query", "")
+                        yield _sse({"type": "step", "label": "Querying full dataset", "detail": query[:120]})
                     elif tool_name == "generate_report":
                         tool_input = event.get("data", {}).get("input", {}) or {}
                         title = tool_input.get("title", "")
@@ -198,6 +230,9 @@ async def chat_stream(payload: ChatRequest):
 
                     if output.startswith("Error:"):
                         yield _sse({"type": "step", "label": "Query failed", "detail": ""})
+                    elif output.startswith("reports/") and "Rows:" in output:
+                        table_path = output.splitlines()[0].strip()
+                        yield _sse({"type": "step", "label": "Table saved", "detail": ""})
                     elif output.startswith("reports/"):
                         report_path = output
                         yield _sse({"type": "step", "label": "Report saved", "detail": ""})
@@ -243,6 +278,7 @@ async def chat_stream(payload: ChatRequest):
             "type": "done",
             "thread_id": payload.thread_id,
             "report_path": report_path,
+            "table_path": table_path,
             "usage": usage,
         })
 

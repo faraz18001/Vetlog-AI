@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import { Cat, Check, Copy } from "lucide-react";
 import { motion } from "framer-motion";
 import ReportCard from "./ReportCard.jsx";
+import InlineTableCard from "./InlineTableCard.jsx";
 import StepChain from "./StepChain.jsx";
 
 function fmt(n) {
@@ -143,6 +144,11 @@ function MessageBubble({ message }) {
         {/* Report card — shown when the agent generated a report this turn */}
         {!isUser && !isStreaming && !isError && message.reportPath && (
           <ReportCard reportPath={message.reportPath} />
+        )}
+
+        {/* Inline table — shown when the agent ran query_to_inline_table */}
+        {!isUser && !isStreaming && !isError && message.tablePath && (
+          <InlineTableCard path={message.tablePath} />
         )}
 
         {/* Token usage badge — AI messages only, after streaming ends */}

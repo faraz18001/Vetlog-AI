@@ -37,6 +37,7 @@ class ChatResponse(BaseModel):
     thread_id: str
     usage: TokenUsage | None = None
     report_path: str | None = None  # e.g. 'reports/daily_summary_2025-06-25_title.md'
+    table_path: str | None = None   # e.g. 'reports/query_2025-06-30_143022.md'
     steps: list[AgentStep] = []     # Intermediate agent steps for the frontend step chain
 
 
