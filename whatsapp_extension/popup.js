@@ -103,53 +103,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Parser helper to convert WhatsApp timestamp (e.g. "1:31 AM, 6/15/2026") to Date object
+  // UPDATED: Parser helper to convert WhatsApp timestamp (Handles "Yesterday" & weekdays)
   function parseWhatsAppTimestamp(timestampStr) {
     if (!timestampStr) return new Date(0);
+    
+    const now = new Date();
     const parts = timestampStr.split(', ');
-    if (parts.length < 2) return new Date(0);
-
     const timePart = parts[0].trim();
-    const datePart = parts[1].trim();
+    const datePart = parts.length > 1 ? parts[1].trim().toLowerCase() : "";
 
-    const dateParts = datePart.split('/');
-    if (dateParts.length < 3) return new Date(0);
+    let targetDate = new Date(); // Defaults to today
 
-    let first = parseInt(dateParts[0], 10);
-    let second = parseInt(dateParts[1], 10);
-    let year = parseInt(dateParts[2], 10);
-
-    if (year < 100) year += 2000;
-
-    let month = 0;
-    let day = 1;
-
-    // Detect locale format (DD/MM vs MM/DD)
-    if (first > 12) {
-      day = first;
-      month = second - 1;
-    } else if (second > 12) {
-      month = first - 1;
-      day = second;
-    } else {
-      month = first - 1;
-      day = second;
+    // Handle relative words
+    if (datePart === "yesterday") {
+      targetDate.setDate(now.getDate() - 1);
+    } else if (['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].includes(datePart)) {
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const targetDay = days.indexOf(datePart);
+      const currentDay = now.getDay();
+      let diff = currentDay - targetDay;
+      if (diff <= 0) diff += 7; // Go back to the previous week's occurrence
+      targetDate.setDate(now.getDate() - diff);
+    } else if (datePart.includes('/')) {
+      // Standard MM/DD/YYYY parsing fallback
+      const datePartsArr = datePart.split('/');
+      if (datePartsArr.length >= 3) {
+        let first = parseInt(datePartsArr[0], 10);
+        let second = parseInt(datePartsArr[1], 10);
+        let year = parseInt(datePartsArr[2], 10);
+        
+        if (year < 100) year += 2000;
+        
+        let month = 0, day = 1;
+        if (first > 12) { day = first; month = second - 1; } 
+        else { month = first - 1; day = second; }
+        
+        targetDate = new Date(year, month, day);
+      }
     }
 
+    // Parse time part (e.g. "5:20 PM")
     const timeMatch = timePart.match(/(\d+):(\d+)\s*(AM|PM)?/i);
-    let hours = 0;
-    let minutes = 0;
     if (timeMatch) {
-      hours = parseInt(timeMatch[1], 10);
-      minutes = parseInt(timeMatch[2], 10);
+      let hours = parseInt(timeMatch[1], 10);
+      let minutes = parseInt(timeMatch[2], 10);
       const ampm = timeMatch[3];
+      
       if (ampm) {
         if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
         if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
       }
+      
+      targetDate.setHours(hours, minutes, 0, 0);
     }
 
-    return new Date(year, month, day, hours, minutes);
+    return targetDate;
   }
 
   // Download logs handler (active chat only)

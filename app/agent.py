@@ -49,7 +49,7 @@ Examples:
 - Q: "Total donations from Mrs. Fatima" → SELECT text FROM raw_messages WHERE text LIKE '%Mrs. Fatima%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'
 - Q: "Generate a donation report" → query donations, then call generate_report(report_type='donation_ledger', ...), then reply with one sentence only."""
 
-"""All of the build model functios are same we can literally creata  model class here and save
+"""All of the build model functions are same we can literally creata model class here and save
 al ot lines of code and make this file less messy."""
 
 
