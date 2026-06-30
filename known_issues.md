@@ -28,6 +28,10 @@ This document tracks known architectural limitations and planned improvements fo
 
 ### 5. LLM Model Picker — Auto-Populate Model Dropdown
 - **GitHub Issue:** [#4](https://github.com/faraz18001/Vetlog-AI/issues/4)
+
+### 6. Chrome Extension — Aggressive DOM Observer Scrapes Wrong Chat
+- **GitHub Issue:** [#5](https://github.com/faraz18001/Vetlog-AI/issues/5)
+- **Assignee:** M-AmmarBaig
 - **Current State:** Settings modal shows a free-text input for the model name. User must go online, research which model their provider offers, and type it in manually.
 - **Issue:** Poor UX — user shouldn't need to know model names by heart. Most providers expose a `/v1/models` endpoint that lists available models, but most require the API key to access.
 - **Planned Fix:** Add `GET /api/config/llm/models?provider=X` endpoint. For OpenRouter (public, no key needed), fetch and filter to tool-calling models live. For OpenAI/Groq/Mistral/Cerebras/Gemini, read the stored API key from `.env` and fetch live. For Ollama, keep text input (user-installed models vary). Frontend: on provider select, fetch models and render `<select>` dropdown with results + "Custom model…" fallback option.
