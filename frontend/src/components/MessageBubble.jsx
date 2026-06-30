@@ -1,6 +1,7 @@
+import { memo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { HeartPulse } from "lucide-react";
+import { Cat, Check, Copy } from "lucide-react";
 import { motion } from "framer-motion";
 import ReportCard from "./ReportCard.jsx";
 import StepChain from "./StepChain.jsx";
@@ -28,8 +29,38 @@ function UsageBadge({ usage }) {
   );
 }
 
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* clipboard unavailable — silently ignore */
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className={`msg-copy-btn${copied ? " msg-copy-btn--done" : ""}`}
+      onClick={handleCopy}
+      aria-label={copied ? "Copied" : "Copy message"}
+      title={copied ? "Copied" : "Copy message"}
+    >
+      {copied ? (
+        <Check size={14} strokeWidth={2.5} />
+      ) : (
+        <Copy size={14} strokeWidth={2.25} />
+      )}
+    </button>
+  );
+}
+
 /** Individual message row — user or assistant */
-export default function MessageBubble({ message }) {
+function MessageBubble({ message }) {
   const { role, content, isStreaming, isError, timestamp, steps } = message;
   const isUser = role === "user";
 
@@ -37,11 +68,14 @@ export default function MessageBubble({ message }) {
     ? timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     : null;
 
+  const showCopy =
+    !isUser && !isStreaming && !isError && content && content.trim().length > 0;
+
   return (
-    <motion.div 
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+    <motion.div
+      layout={!isStreaming}
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", bounce: 0, duration: 0.4 }}
       className={`msg-row ${isUser ? "msg-row--user" : "msg-row--ai"}`}
     >
@@ -53,7 +87,7 @@ export default function MessageBubble({ message }) {
         {isUser ? (
           "You"
         ) : (
-          <HeartPulse size={16} strokeWidth={2.5} />
+          <Cat size={17} strokeWidth={2.25} />
         )}
       </div>
 
@@ -84,7 +118,6 @@ export default function MessageBubble({ message }) {
               .trim()}
           >
             {isUser || isError ? (
-              // User bubbles and errors stay as plain text
               <p>{content}</p>
             ) : (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -93,6 +126,8 @@ export default function MessageBubble({ message }) {
             )}
           </div>
         )}
+
+        {showCopy && <CopyButton text={content} />}
 
         {timeLabel && !isStreaming && (
           <span className="msg-ts" aria-hidden="true">
@@ -118,3 +153,5 @@ export default function MessageBubble({ message }) {
     </motion.div>
   );
 }
+
+export default memo(MessageBubble);

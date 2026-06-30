@@ -4,7 +4,7 @@ import ChatWindow from "./components/ChatWindow.jsx";
 import InputBar from "./components/InputBar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import SettingsModal from "./components/SettingsModal.jsx";
-import { HeartPulse, PanelLeft } from "lucide-react";
+import { Cat, PanelLeft } from "lucide-react";
 import "./App.css";
 
 
@@ -16,6 +16,9 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {/* Global paper-grain texture overlay */}
+      <div className="grain-overlay" aria-hidden="true" />
+
       <Sidebar 
         isOpen={isSidebarOpen}
         onNewChat={clearChat} 
@@ -39,8 +42,8 @@ export default function App() {
             >
               <PanelLeft size={20} strokeWidth={2.5} />
             </button>
-            <span className="topbar-brand-icon" style={{ marginLeft: 'var(--space-2)' }}>
-              <HeartPulse size={20} strokeWidth={2.5} />
+            <span className="topbar-brand-mark" style={{ marginLeft: 'var(--space-2)' }}>
+              <Cat size={22} strokeWidth={2.25} />
             </span>
             <span className="topbar-wordmark">Vetlog AI</span>
           </div>

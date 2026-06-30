@@ -4,8 +4,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  background: oklch(8% 0.005 25 / 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 100;
 }
 
@@ -20,34 +21,37 @@
   justify-content: center;
   z-index: 101;
   pointer-events: none; /* Let clicks pass through to backdrop */
+  padding: var(--space-4);
 }
 
 .settings-modal {
   width: 100%;
   max-width: 440px;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  pointer-events: auto; /* Re-enable clicks inside modal */
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-5) var(--space-5);
   border-bottom: 1px solid var(--color-border);
 }
 
 .modal-title {
   font-family: var(--font-display);
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--color-text);
   margin: 0;
+  letter-spacing: -0.015em;
 }
 
 .modal-close-btn {
@@ -60,12 +64,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background var(--dur-fast), color var(--dur-fast);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
 .modal-close-btn:hover {
   background: var(--color-surface-hover);
   color: var(--color-text);
+}
+
+.modal-close-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .modal-body {
@@ -82,12 +91,12 @@
 }
 
 .modal-error {
-  background: rgba(220, 38, 38, 0.1); /* transparent red */
-  color: #ef4444; /* red-500 */
+  background: var(--color-error-subtle);
+  color: var(--color-error);
   padding: var(--space-3);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-  border: 1px solid rgba(220, 38, 38, 0.2);
+  border: 1px solid oklch(55% 0.22 25 / 0.28);
 }
 
 .form-group {
@@ -100,6 +109,7 @@
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-text);
+  letter-spacing: -0.005em;
 }
 
 .form-input {
@@ -110,12 +120,28 @@
   border-radius: var(--radius-md);
   font-family: var(--font-body);
   font-size: var(--text-sm);
-  transition: border-color var(--dur-fast);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-faint);
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--color-focus);
+  border-color: var(--color-border-strong);
+}
+
+.form-input:focus-visible {
+  outline: none;
+}
+
+/* Native select arrow tidy-up (dark) */
+.form-input option {
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .form-hint {
@@ -137,13 +163,23 @@
   color: var(--color-text);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--dur-fast);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
 }
 
 .btn-secondary:hover {
   background: var(--color-surface-hover);
+  border-color: var(--color-accent);
+}
+
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .btn-primary {
@@ -152,16 +188,41 @@
   color: var(--color-accent-fg);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: opacity var(--dur-fast);
+  box-shadow: var(--shadow-accent);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
 }
 
 .btn-primary:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary:hover:not(:disabled),
+  .btn-primary:active:not(:disabled) {
+    transform: none;
+  }
 }

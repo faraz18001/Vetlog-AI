@@ -1,24 +1,47 @@
 import { useState, useEffect } from "react";
-import { List } from "lucide-react";
+import {
+  Database,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  List,
+  Circle,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-/** Dot icon for each node on the timeline */
-function StepDot({ label, isLast, isStreaming }) {
-  const isError = label.includes("failed") || label.includes("error");
-  const isDone = label === "Report saved";
+/* Pick an icon for a step based on its label content. */
+function iconForLabel(label) {
+  const l = (label || "").toLowerCase();
+  if (l.includes("sql") || l.includes("query") || l.includes("database") || l.includes("row"))
+    return Database;
+  if (l.includes("report")) return FileText;
+  if (l.includes("fail") || l.includes("error")) return AlertTriangle;
+  if (l.includes("saved") || l.includes("done")) return CheckCircle2;
+  return Circle;
+}
+
+/** Node chip holding an icon; state drives colour. */
+function StepNode({ label, isLast, isStreaming }) {
+  const l = (label || "").toLowerCase();
+  const isError = l.includes("failed") || l.includes("error");
+  const isDone = l === "report saved" || l.includes("rows returned") || l.includes("row returned");
+  const Icon = iconForLabel(label);
+
+  const cls = [
+    "step-node",
+    isError ? "step-node--error" : "",
+    isDone ? "step-node--done" : "",
+    isStreaming && isLast ? "step-node--live" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <span
-      className={[
-        "step-dot",
-        isError ? "step-dot--error" : "",
-        isDone ? "step-dot--done" : "",
-        isStreaming && isLast ? "step-dot--pulse" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      aria-hidden
-    />
+    <span className={cls} aria-hidden>
+      <span className="step-icon">
+        <Icon size={12} strokeWidth={2.5} />
+      </span>
+    </span>
   );
 }
 
@@ -31,7 +54,7 @@ function StepDot({ label, isLast, isStreaming }) {
  * click it to expand again.
  *
  * Props:
- *   steps       - Array of { label: string }
+ *   steps       - Array of { label: string, detail?: string }
  *   isStreaming - True while the agent is still working
  */
 export default function StepChain({ steps, isStreaming }) {
@@ -67,47 +90,64 @@ export default function StepChain({ steps, isStreaming }) {
   return (
     <motion.div layout className="steps-chain">
       <AnimatePresence>
-      {steps.map((step, i) => {
-        const isLast = i === steps.length - 1;
-        const showConnector = !isLast || isStreaming;
+        {steps.map((step, i) => {
+          const isLast = i === steps.length - 1;
+          const showConnector = !isLast || isStreaming;
+          const isError =
+            step.label.includes("failed") || step.label.includes("error");
 
-        return (
-          <motion.div 
-            key={i} 
+          return (
+            <motion.div
+              key={i}
+              layout
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="step-row"
+            >
+              {/* Left column: node + connector line */}
+              <div className="step-track">
+                <StepNode label={step.label} isLast={isLast} isStreaming={false} />
+                {showConnector && <span className="step-connector" />}
+              </div>
+
+              {/* Right column: label + optional detail */}
+              <div className="step-label-col">
+                <span
+                  className={`step-label${isError ? " step-label--error" : ""}`}
+                >
+                  {step.label}
+                </span>
+                {step.detail ? (
+                  <span className="step-detail">{step.detail}</span>
+                ) : null}
+              </div>
+            </motion.div>
+          );
+        })}
+
+        {/* Animated pulse node while the agent is still working */}
+        {isStreaming && (
+          <motion.div
             layout
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             className="step-row"
           >
-            {/* Left column: dot + connector line */}
             <div className="step-track">
-              <StepDot label={step.label} isLast={isLast} isStreaming={false} />
-              {showConnector && <span className="step-connector" />}
+              <span className="step-node step-node--live" aria-hidden>
+                <span className="step-icon">
+                  <Circle size={12} strokeWidth={2.5} />
+                </span>
+              </span>
             </div>
-
-            {/* Right column: label */}
-            <span
-              className={`step-label${step.label.includes("failed") || step.label.includes("error") ? " step-label--error" : ""}`}
-            >
-              {step.label}
+            <span className="step-pulse-label">
+              <span className="dot" />
+              <span className="dot" />
+              <span className="dot" />
             </span>
           </motion.div>
-        );
-      })}
-
-      {/* Animated pulse node while the agent is still working */}
-      {isStreaming && (
-        <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="step-row">
-          <div className="step-track">
-            <span className="step-dot step-dot--live" aria-hidden />
-          </div>
-          <span className="step-pulse-label">
-            <span className="dot" />
-            <span className="dot" />
-            <span className="dot" />
-          </span>
-        </motion.div>
-      )}
+        )}
       </AnimatePresence>
 
       {!isStreaming && steps.length > 0 && (

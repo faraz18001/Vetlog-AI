@@ -1,11 +1,29 @@
 .sidebar {
-  background: var(--color-surface);
+  background: var(--color-paper-recessed);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   height: 100%;
   overflow: hidden;
+  position: relative;
+}
+
+/* faint warm seam down the right edge of the sidebar */
+.sidebar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    oklch(62% 0.20 295 / 0.16) 35%,
+    oklch(62% 0.20 295 / 0.16) 65%,
+    transparent 100%
+  );
 }
 
 .sidebar-inner {
@@ -19,6 +37,7 @@
   padding: var(--space-4);
 }
 
+/* New Chat — inviting filled accent-tinted action */
 .sidebar-new-chat {
   width: 100%;
   display: flex;
@@ -27,23 +46,27 @@
   font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--color-text-muted);
-  background: transparent;
-  border: 1px solid var(--color-border);
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border: 1px solid oklch(62% 0.20 295 / 0.28);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-4);
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: var(--shadow-sm);
   transition:
     color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
 .sidebar-new-chat:hover:not(:disabled) {
-  color: var(--color-text);
-  border-color: var(--color-border-strong);
-  background: var(--color-surface-hover);
+  color: var(--color-accent-fg);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-accent);
 }
 
 .sidebar-new-chat:focus-visible {
@@ -52,12 +75,13 @@
 }
 
 .sidebar-new-chat:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: translateY(0);
 }
 
 .sidebar-new-chat:disabled {
   opacity: 0.32;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .sidebar-history {
@@ -83,7 +107,7 @@
   font-weight: 600;
   color: var(--color-text-faint);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   margin: 0 0 var(--space-2) var(--space-2);
 }
 
@@ -107,14 +131,39 @@
   text-align: left;
   border-radius: var(--radius-md);
   cursor: pointer;
+  position: relative;
   transition:
     background var(--dur-fast) var(--ease-out),
     color var(--dur-fast) var(--ease-out);
 }
 
+/* terracotta left-accent on hover */
+.history-item-btn::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  transition: height var(--dur-base) var(--ease-out);
+}
+
 .history-item-btn:hover {
   background: var(--color-surface-hover);
   color: var(--color-text);
+}
+
+.history-item-btn:hover::before {
+  height: 60%;
+}
+
+.history-item-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
 }
 
 .history-item-icon {
@@ -161,6 +210,11 @@
   color: var(--color-text);
 }
 
+.sidebar-footer-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .profile-btn {
   margin-top: var(--space-2);
   padding: var(--space-2);
@@ -176,6 +230,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid oklch(62% 0.20 295 / 0.22);
 }
 
 .profile-info {

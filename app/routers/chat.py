@@ -8,6 +8,41 @@ from app.agent import get_current_agent
 
 router = APIRouter(prefix="", tags=["chat"])
 
+
+def _sse(payload: dict) -> str:
+    """Format a dict as a Server-Sent-Events `data:` line."""
+    return f"data: {json.dumps(payload)}\n\n"
+
+
+def _tool_output_str(raw_output) -> str:
+    """Normalise a tool's raw output into a plain string."""
+    if hasattr(raw_output, "content"):
+        output = raw_output.content or ""
+        if isinstance(output, list):
+            output = " ".join(
+                b.get("text", "") if isinstance(b, dict) else str(b) for b in output
+            )
+        return output
+    if isinstance(raw_output, str):
+        return raw_output
+    return str(raw_output)
+
+
+def _iter_chunk_texts(content) -> list[str]:
+    """Extract plain text pieces from a streaming chunk's content."""
+    texts: list[str] = []
+    if isinstance(content, str):
+        if content:
+            texts.append(content)
+    elif isinstance(content, list):
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "text":
+                t = block.get("text", "")
+                if t:
+                    texts.append(t)
+    return texts
+
+
 # In-memory usage accumulator
 _usage = {
     "total_requests": 0,
@@ -136,17 +171,6 @@ async def chat_stream(payload: ChatRequest):
         report_path = None
         total_input = 0
         total_output = 0
-        text_buffer: list[str] = []
-        tools_in_flight = 0
-        tools_ever_started = False
-        text_flushed = False
-
-        async def flush_text_buffer():
-            nonlocal text_flushed
-            for chunk_text in text_buffer:
-                yield f"data: {json.dumps({'type': 'chunk', 'text': chunk_text})}\n\n"
-            text_buffer.clear()
-            text_flushed = True
 
         try:
             async for event in agent.astream_events(
@@ -157,72 +181,43 @@ async def chat_stream(payload: ChatRequest):
                 kind = event["event"]
 
                 if kind == "on_tool_start":
-                    tools_in_flight += 1
-                    tools_ever_started = True
                     tool_name = event.get("name", "")
                     if tool_name == "execute_sql_query":
                         tool_input = event.get("data", {}).get("input", {}) or {}
                         query = tool_input.get("query", "")
-                        yield f"data: {json.dumps({'type': 'step', 'label': 'Querying database', 'detail': query[:120]})}\n\n"
+                        yield _sse({"type": "step", "label": "Querying database", "detail": query[:120]})
                     elif tool_name == "generate_report":
                         tool_input = event.get("data", {}).get("input", {}) or {}
                         title = tool_input.get("title", "")
-                        yield f"data: {json.dumps({'type': 'step', 'label': 'Generating report', 'detail': title})}\n\n"
+                        yield _sse({"type": "step", "label": "Generating report", "detail": title})
                     else:
-                        yield f"data: {json.dumps({'type': 'step', 'label': f'Running {tool_name}', 'detail': ''})}\n\n"
+                        yield _sse({"type": "step", "label": f"Running {tool_name}", "detail": ""})
 
                 elif kind == "on_tool_end":
-                    tools_in_flight -= 1
-                    raw_output = event.get("data", {}).get("output", "") or ""
-                    if hasattr(raw_output, "content"):
-                        output = raw_output.content or ""
-                        if isinstance(output, list):
-                            output = " ".join(b.get("text", "") if isinstance(b, dict) else str(b) for b in output)
-                    elif isinstance(raw_output, str):
-                        output = raw_output
-                    else:
-                        output = str(raw_output)
+                    output = _tool_output_str(event.get("data", {}).get("output", ""))
 
                     if output.startswith("Error:"):
-                        yield f"data: {json.dumps({'type': 'step', 'label': 'Query failed', 'detail': ''})}\n\n"
+                        yield _sse({"type": "step", "label": "Query failed", "detail": ""})
                     elif output.startswith("reports/"):
                         report_path = output
-                        yield f"data: {json.dumps({'type': 'step', 'label': 'Report saved', 'detail': ''})}\n\n"
+                        yield _sse({"type": "step", "label": "Report saved", "detail": ""})
                     elif output == "No results found.":
-                        yield f"data: {json.dumps({'type': 'step', 'label': '0 rows returned', 'detail': ''})}\n\n"
+                        yield _sse({"type": "step", "label": "0 rows returned", "detail": ""})
                     else:
                         lines = [l for l in output.strip().splitlines() if l.strip()]
                         row_count = max(0, len(lines) - 1)
                         label = f"{row_count} row{'s' if row_count != 1 else ''} returned"
-                        yield f"data: {json.dumps({'type': 'step', 'label': label, 'detail': ''})}\n\n"
-
-                    if tools_in_flight == 0:
-                        async for sse in flush_text_buffer():
-                            yield sse
+                        yield _sse({"type": "step", "label": label, "detail": ""})
 
                 elif kind == "on_chat_model_stream":
                     chunk = event.get("data", {}).get("chunk")
                     if chunk is None:
                         continue
-                    tool_call_chunks = getattr(chunk, "tool_call_chunks", None) or []
-                    if tool_call_chunks:
+                    # Skip chunks that only carry tool-call deltas — we want text.
+                    if getattr(chunk, "tool_call_chunks", None):
                         continue
-                    content = getattr(chunk, "content", "")
-                    texts: list[str] = []
-                    if isinstance(content, str) and content:
-                        texts.append(content)
-                    elif isinstance(content, list):
-                        for block in content:
-                            if isinstance(block, dict) and block.get("type") == "text":
-                                t = block.get("text", "")
-                                if t:
-                                    texts.append(t)
-                    for t in texts:
-                        should_buffer = tools_ever_started and (tools_in_flight > 0 or not text_flushed)
-                        if should_buffer:
-                            text_buffer.append(t)
-                        else:
-                            yield f"data: {json.dumps({'type': 'chunk', 'text': t})}\n\n"
+                    for t in _iter_chunk_texts(getattr(chunk, "content", "")):
+                        yield _sse({"type": "chunk", "text": t})
 
                 elif kind == "on_chat_model_end":
                     meta = event.get("data", {}).get("output")
@@ -232,11 +227,8 @@ async def chat_stream(payload: ChatRequest):
                         total_output += usage_meta.get("output_tokens", 0)
 
         except Exception as exc:
-            yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
+            yield _sse({"type": "error", "message": str(exc)})
             return
-
-        async for sse in flush_text_buffer():
-            yield sse
 
         input_cost = (total_input / 1000) * INPUT_TOKEN_PRICE_PER_1K
         output_cost = (total_output / 1000) * OUTPUT_TOKEN_PRICE_PER_1K
@@ -247,7 +239,12 @@ async def chat_stream(payload: ChatRequest):
             "cost_usd": round(input_cost + output_cost, 6),
         }
         accumulate_usage(TokenUsage(**usage))
-        yield f"data: {json.dumps({'type': 'done', 'thread_id': payload.thread_id, 'report_path': report_path, 'usage': usage})}\n\n"
+        yield _sse({
+            "type": "done",
+            "thread_id": payload.thread_id,
+            "report_path": report_path,
+            "usage": usage,
+        })
 
     return StreamingResponse(
         event_generator(),
@@ -255,6 +252,7 @@ async def chat_stream(payload: ChatRequest):
         headers={
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
         },
     )
 
