@@ -1,12 +1,31 @@
-console.log("Vetlog Scraper: Content script loaded.");
+console.log("Vetlog Scraper: Content script loaded. Manual gate active.");
 
 chrome.storage.local.set({ isScrolling: false });
 
 // --- Global State ---
-const historicalSeenMessages = new Set(); // Messages already safely in the DB
-const sessionSeenMessages = new Set();    // Messages we just read on the screen right now
-let currentChatName = "";
+let manualTargetChat = null; 
+const historicalSeenMessages = new Set(); 
+const sessionSeenMessages = new Set();    
+
 let isLoadingStorage = false;
+let hasLoadedMemoryForTarget = false; 
+
+chrome.storage.local.get(['manualTargetChat'], (result) => {
+  manualTargetChat = result.manualTargetChat || null;
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.manualTargetChat) {
+    manualTargetChat = changes.manualTargetChat.newValue || null;
+    
+    // Completely wipe memory so the next scan is forced to reload safely
+    historicalSeenMessages.clear();
+    sessionSeenMessages.clear();
+    sessionCapturedMessages = [];
+    hasLoadedMemoryForTarget = false; 
+    console.log(`[Vetlog System] Target changed to: "${manualTargetChat}". Memory reset.`);
+  }
+});
 
 // Auto-scrolling state variables
 let scrollInterval = null;
@@ -17,23 +36,33 @@ let noChangeCount = 0;
 // Session & Watermark State
 let sessionCapturedMessages = [];
 let consecutiveSeenCount = 0;
-let floatingStopBtn = null;
 
 // --- DOM Helpers ---
+let lastLoggedActiveChat = ""; // Prevents console spam
+
 function getActiveChatName() {
+  let chatName = null;
   const infoHeader = document.querySelector('[data-testid="conversation-info-header"]');
   if (infoHeader) {
     const titleSpan = infoHeader.querySelector('[data-testid="conversation-info-header-chat-title"]') || 
                       infoHeader.querySelector('span');
-    if (titleSpan) return titleSpan.innerText.trim();
-    return infoHeader.innerText.trim();
+    if (titleSpan) chatName = titleSpan.innerText.trim();
+    else chatName = infoHeader.innerText.trim();
+  } else {
+    const header = document.querySelector('header');
+    if (header) {
+      const titleSpan = header.querySelector('span[dir="auto"]');
+      if (titleSpan) chatName = titleSpan.innerText.trim();
+    }
   }
-  const header = document.querySelector('header');
-  if (header) {
-    const titleSpan = header.querySelector('span[dir="auto"]');
-    if (titleSpan) return titleSpan.innerText.trim();
+
+  // DEBUG: Only announce the chat when it actually changes on the screen
+  if (chatName && chatName !== lastLoggedActiveChat) {
+    console.log(`[Vetlog Debug] 👁️ Active chat on screen detected: "${chatName}"`);
+    lastLoggedActiveChat = chatName;
   }
-  return null;
+  
+  return chatName;
 }
 
 function getBubbleTime(container) {
@@ -84,68 +113,42 @@ function getScrollContainer() {
   return null;
 }
 
-// --- UI Injection ---
-function createFloatingStopButton() {
-  if (floatingStopBtn) return;
-  floatingStopBtn = document.createElement('button');
-  floatingStopBtn.innerText = "🛑 Stop Scraping";
-  floatingStopBtn.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99999; padding:15px 25px; background:#dc3545; color:white; font-weight:bold; border:none; border-radius:8px; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.3); font-size:16px;";
-  
-  floatingStopBtn.onclick = () => {
-    console.log("Vetlog Scraper: Manual UI Stop triggered.");
-    stopAutoScroll();
-  };
-  document.body.appendChild(floatingStopBtn);
-  document.addEventListener('click', interceptChatSwitch, true);
-}
 
-function interceptChatSwitch(e) {
-  if (scrollInterval && e.target !== floatingStopBtn) {
-    console.log("Vetlog Scraper: Intercepted click during scroll. Halting safely.");
-    stopAutoScroll();
-  }
-}
 
 // --- Core Scraper Engine ---
 function scanExistingMessages() {
   if (isLoadingStorage) return; 
-  let currentScanNewMessages = []; // For the Prepend Fix
   
   const activeChat = getActiveChatName();
   if (!activeChat) return;
 
-  // Detect chat switch and cleanly wipe states
-  if (activeChat !== currentChatName) {
-    console.log(`Vetlog Scraper: Chat switched from "${currentChatName}" to "${activeChat}"`);
-    currentChatName = activeChat;
+  if (!manualTargetChat || activeChat !== manualTargetChat) {
+    return;
+  }
+  
+  if (!hasLoadedMemoryForTarget) {
     isLoadingStorage = true;
-    
-    stopAutoScroll();
-    historicalSeenMessages.clear();
-    sessionSeenMessages.clear();
-    sessionCapturedMessages = [];
-    
     chrome.storage.local.get(['capturedChats'], (result) => {
       const chats = result.capturedChats || {};
-      const chatMessages = chats[activeChat] || [];
+      const chatMessages = chats[manualTargetChat] || [];
       for (const msg of chatMessages) {
         const idToStore = msg.msg_id || btoa(unescape(encodeURIComponent(msg.sender + msg.timestamp + msg.text)));
-        historicalSeenMessages.add(idToStore); // Load hard drive data to historical memory
+        historicalSeenMessages.add(idToStore); 
       }
-      console.log(`Vetlog Scraper: Loaded ${historicalSeenMessages.size} historical messages for "${activeChat}".`);
-      
-      chrome.storage.local.set({ activeChatName: activeChat }, () => {
-        isLoadingStorage = false;
-        scanExistingMessages();
-      });
+      isLoadingStorage = false;
+      hasLoadedMemoryForTarget = true;
+      console.log(`[Vetlog DB] Memory Loaded! Found ${historicalSeenMessages.size} historical messages for "${manualTargetChat}".`);
     });
     return;
   }
 
+  let currentScanNewMessages = []; 
   let lastSender = "Unknown";
   let lastTimestamp = "";
 
-  const existingContainers = document.querySelectorAll('[data-testid="msg-container"]');
+  let existingContainers = Array.from(document.querySelectorAll('[data-testid="msg-container"]'));
+  existingContainers.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+
   existingContainers.forEach(container => {
     try {
       const metaElements = Array.from(container.querySelectorAll('.copyable-text[data-pre-plain-text]'));
@@ -155,9 +158,7 @@ function scanExistingMessages() {
       });
 
       let metaData = "Unknown";
-      if (mainMetaElements.length > 0) {
-        metaData = mainMetaElements[0].getAttribute('data-pre-plain-text') || "Unknown";
-      }
+      if (mainMetaElements.length > 0) metaData = mainMetaElements[0].getAttribute('data-pre-plain-text') || "Unknown";
 
       let sender = "Unknown";
       let timestamp = "";
@@ -210,47 +211,41 @@ function scanExistingMessages() {
 
       const parentRow = container.closest('[data-id]');
       let msgId = parentRow ? parentRow.getAttribute('data-id') : null;
-      if (!msgId) {
-        msgId = btoa(unescape(encodeURIComponent(sender + timestamp + messageText)));
-      }
+      if (!msgId) msgId = btoa(unescape(encodeURIComponent(sender + timestamp + messageText)));
 
-      // Check against HISTORICAL data (Triggers the Watermark Stop)
       if (historicalSeenMessages.has(msgId)) {
         consecutiveSeenCount++;
         return; 
       }
       
-      // Check against LIVE session data (Prevents the 7000 duplicate bug!)
       if (sessionSeenMessages.has(msgId)) {
-        consecutiveSeenCount = 0; // Reset because we are still looking at current data
+        consecutiveSeenCount = 0; 
         return;
       }
       
-      // BRAND NEW MESSAGE!
       consecutiveSeenCount = 0;
-      sessionSeenMessages.add(msgId); // MUST ADD TO MEMORY SO IT DOESN'T DUPLICATE
+      sessionSeenMessages.add(msgId); 
       
       currentScanNewMessages.push({
-        chat_name: activeChat,
+        chat_name: manualTargetChat,
         sender: sender,
         timestamp: timestamp,
         text: messageText,
         msg_id: msgId
       });
 
-    } catch (e) {
-      console.error("Error parsing message container:", e);
+    } catch (e) { 
+        console.error("[Vetlog Error] Failed parsing message container:", e);
     }
   });
 
-  // PREPEND FIX: Chronological sorting
   if (currentScanNewMessages.length > 0) {
     sessionCapturedMessages = currentScanNewMessages.concat(sessionCapturedMessages);
+    console.log(`[Vetlog Live] Captured chunk of ${currentScanNewMessages.length} messages.`);
   }
 
-  // WATERMARK STOP
   if (scrollInterval && consecutiveSeenCount > 15) {
-    console.log("Vetlog Scraper: Watermark reached! We have already synced this history.");
+    console.log("[Vetlog System] Watermark limit hit! Reached previously synced history.");
     stopAutoScroll();
   }
 }
@@ -271,26 +266,41 @@ document.addEventListener('scroll', (event) => {
   }
 }, true);
 
-
 // --- Auto Scrolling Controller ---
 function startAutoScroll() {
   if (scrollInterval) return;
+
+  const activeChat = getActiveChatName();
   
+  // DEBUG CHECKER: Refuse to scroll if there is a typo or mismatch!
+  console.log(`\n==========================================`);
+  console.log(`[Vetlog Pre-Flight Check] Validating Lock...`);
+  console.log(`Target Input: "${manualTargetChat}"`);
+  console.log(`Active Chat : "${activeChat}"`);
+  
+  if (!manualTargetChat || activeChat !== manualTargetChat) {
+      console.error(`❌ [Vetlog Error] SCROLL ABORTED: Target mismatch! Make sure there are no extra spaces or typos.`);
+      console.log(`==========================================\n`);
+      chrome.storage.local.set({ isScrolling: false });
+      return;
+  }
+  
+  console.log(`✅ [Vetlog Success] MATCH FOUND! Engaging scraper.`);
+  console.log(`==========================================\n`);
+
   const container = getScrollContainer();
   if (!container) {
-    console.log("Vetlog Scraper: Could not find chat scroll container.");
+    console.error("[Vetlog Error] Could not find the chat window to scroll.");
     chrome.storage.local.set({ isScrolling: false });
     return;
   }
 
-  console.log("Vetlog Scraper: Starting auto-scroll up...");
   lastScrollHeight = container.scrollHeight;
   noChangeCount = 0;
   consecutiveSeenCount = 0; 
-  // Notice we DO NOT wipe sessionCapturedMessages here anymore!
   
   chrome.storage.local.set({ isScrolling: true });
-  createFloatingStopButton(); 
+
 
   scanInterval = setInterval(scanExistingMessages, 200);
 
@@ -300,22 +310,16 @@ function startAutoScroll() {
       stopAutoScroll();
       return;
     }
-
     scrollTarget.scrollTop = 0;
-
     setTimeout(() => {
       if (scrollTarget.scrollHeight === lastScrollHeight) {
         noChangeCount++;
-        if (noChangeCount >= 15) {
-          console.log("Vetlog Scraper: Reached absolute top of chat.");
-          stopAutoScroll();
-        }
+        if (noChangeCount >= 15) stopAutoScroll();
       } else {
         lastScrollHeight = scrollTarget.scrollHeight;
         noChangeCount = 0;
       }
     }, 600); 
-
   }, 1500); 
 }
 
@@ -324,61 +328,38 @@ function stopAutoScroll() {
   if (scanInterval) clearInterval(scanInterval);
   scrollInterval = null; 
   scanInterval = null;
+
   
-  if (floatingStopBtn) {
-    floatingStopBtn.remove();
-    floatingStopBtn = null;
-    document.removeEventListener('click', interceptChatSwitch, true);
-  }
-  
-  console.log("Vetlog Scraper: Stopped auto-scroll.");
   chrome.storage.local.set({ isScrolling: false });
+  console.log("[Vetlog System] Scraper halted.");
 
-  if (sessionCapturedMessages.length > 0) {
+  if (sessionCapturedMessages.length > 0 && manualTargetChat) {
     const messagesToSync = [...sessionCapturedMessages]; 
-    sessionCapturedMessages = []; // Safely wipe it ONLY after copying the data
+    sessionCapturedMessages = []; 
 
-    chrome.storage.local.get(['capturedChats', 'activeChatName'], (result) => {
-      const activeChat = result.activeChatName || getActiveChatName();
+    console.log(`[Vetlog System] Saving ${messagesToSync.length} new messages to memory and delegating to backend...`);
+
+    chrome.storage.local.get(['capturedChats'], (result) => {
       const chats = result.capturedChats || {};
-      const history = chats[activeChat] || [];
+      const history = chats[manualTargetChat] || [];
       
-      chats[activeChat] = history.concat(messagesToSync);
+      chats[manualTargetChat] = history.concat(messagesToSync);
       
       chrome.storage.local.set({ capturedChats: chats }, () => {
-        // Move the new syncs to historical memory
         for (const msg of messagesToSync) {
           historicalSeenMessages.add(msg.msg_id);
         }
-        console.log(`Vetlog Scraper: Safely saved ${messagesToSync.length} new messages to Chrome storage.`);
-        batchSendToBackend(messagesToSync, activeChat);
+        batchSendToBackend(messagesToSync, manualTargetChat);
       });
     });
-  } else {
-      console.log("Vetlog Scraper: No new messages to sync.");
   }
 }
 
 function batchSendToBackend(messages, activeChatName) {
   if (!messages || messages.length === 0) return;
-
-  console.log(`Vetlog Scraper: Delegating batch send of ${messages.length} messages to background script...`);
-
-  chrome.runtime.sendMessage({
-    action: "sendBatchToBackend",
-    messages: messages
-  }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error("Vetlog Scraper: Background communication failed:", chrome.runtime.lastError);
-    } else if (response && response.success) {
-      console.log("Vetlog Scraper: Batch successfully ingested to DB:", response.data);
-    } else {
-      console.error("Vetlog Scraper: Batch ingestion failed:", response ? response.error : "Unknown error");
-    }
-  });
+  chrome.runtime.sendMessage({ action: "sendBatchToBackend", messages: messages }, () => {});
 }
 
-// --- Listeners from Popup ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "startAutoScroll") {
     startAutoScroll();
@@ -390,7 +371,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     historicalSeenMessages.clear();
     sessionSeenMessages.clear();
     sessionCapturedMessages = [];
-    console.log("Vetlog Scraper: Cleared all in-memory message signatures.");
+    hasLoadedMemoryForTarget = false; 
+    console.log("[Vetlog System] Local memory cleared via UI button.");
     sendResponse({ status: "cleared" });
   }
   return true;
