@@ -73,6 +73,37 @@ def _tsv_to_markdown_table(data: str) -> str:
     return md
 
 
+def _rows_with_display_timestamps(column_names, rows):
+    """
+    Convert ISO-8601 timestamps (24-hour) to 12-hour AM/PM format
+    for display. Keeps 24-hour storage intact for SQL range queries.
+    """
+    if not rows:
+        return rows
+
+    ts_idx = None
+    for idx, col in enumerate(column_names):
+        if col.lower() == "timestamp":
+            ts_idx = idx
+            break
+
+    if ts_idx is None:
+        return rows
+
+    formatted = []
+    for row in rows:
+        new_row = list(row)
+        val = str(new_row[ts_idx]) if new_row[ts_idx] is not None else ""
+        if val.startswith("202"):
+            try:
+                dt = datetime.strptime(val, "%Y-%m-%d %H:%M:%S")
+                new_row[ts_idx] = dt.strftime("%b %d, %Y %I:%M %p")
+            except ValueError:
+                pass
+        formatted.append(tuple(new_row))
+    return formatted
+
+
 @tool
 def generate_report(
     report_type: str,
@@ -156,6 +187,8 @@ def execute_sql_query(query: str) -> str:
 
         # Build a tab-separated table: header row then data rows.
         column_names = [description[0] for description in cursor.description]
+        # Convert timestamps from 24-hour ISO to 12-hour display
+        rows = _rows_with_display_timestamps(column_names, rows)
         header = "\t".join(column_names)
         # Cap results at 10 rows to keep the response concise.
         # But beacause  of this the agent is not being able to answer stuff like aggreated all the donations.
@@ -220,6 +253,8 @@ def query_to_inline_table(query: str, title: str = "Query Results") -> str:
             return "No results found."
 
         column_names = [description[0] for description in cursor.description]
+        # Convert timestamps from 24-hour ISO to 12-hour display
+        rows = _rows_with_display_timestamps(column_names, rows)
 
         # Safety cap — 5000 rows is enough for any realistic clinic dataset
         # and prevents a runaway query from producing a massive file.
