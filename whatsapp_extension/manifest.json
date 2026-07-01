@@ -3,7 +3,7 @@
   "name": "Vetlog WhatsApp Scraper",
   "version": "1.0",
   "description": "Scrapes WhatsApp Web messages for Vetlog integration.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "unlimitedStorage"],
   "host_permissions": [
     "https://web.whatsapp.com/*",
     "file:///*",

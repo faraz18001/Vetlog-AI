@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_session, RawMessage
 from app.schemas import RawMessageBatchIn
@@ -47,6 +47,12 @@ def ingest_batch(payload: RawMessageBatchIn, db: Session = Depends(get_session))
         seen_signatures.add(signature)
         inserted_count += 1
 
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Webhook: Database commit failed, rolled back: {e}")
+        raise HTTPException(status_code=500, detail="Database insertion failed.")
+
     print(f"Ingested batch: {inserted_count} new messages (duplicates skipped)")
     return {"status": "received", "count": inserted_count}
