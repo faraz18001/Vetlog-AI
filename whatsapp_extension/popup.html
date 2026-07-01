@@ -2,34 +2,49 @@
 <html>
 <head>
   <style>
-    body { width: 300px; padding: 12px; font-family: sans-serif; }
+    body { width: 320px; padding: 12px; font-family: sans-serif; }
     h2 { margin: 0 0 8px; font-size: 16px; }
-    #activeChat { font-weight: bold; margin-bottom: 4px; font-size: 13px; color: #007bff; }
-    #count { color: #666; font-size: 13px; margin-bottom: 10px; }
+    
+    .target-box { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 6px; margin-bottom: 12px; }
+    label { font-size: 12px; font-weight: bold; color: #333; }
+    input[type="text"] { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    
+    #lockedStatus { font-weight: bold; margin-top: 6px; font-size: 12px; color: #dc3545; }
+    #lockedStatus.locked { color: #28a745; }
+    
+    #count { color: #666; font-size: 13px; margin-bottom: 10px; margin-top: 5px; }
     button {
       width: 100%; padding: 10px; font-size: 14px;
       color: white; border: none;
-      border-radius: 6px; cursor: pointer;
+      border-radius: 6px; cursor: pointer; margin-bottom: 8px;
     }
-    #scrollBtn { background: #007bff; margin-bottom: 8px; }
+    
+    #setTargetBtn { background: #17a2b8; }
+    #setTargetBtn:hover { background: #138496; }
+    #scrollBtn { background: #007bff; }
     #scrollBtn:hover { background: #0056b3; }
     #scrollBtn.scrolling { background: #dc3545; }
-    #scrollBtn.scrolling:hover { background: #bd2130; }
     #downloadBtn { background: #25D366; }
-    #downloadBtn:hover { background: #1da851; }
-    #clearBtn { background: #6c757d; margin-top: 8px; }
-    #clearBtn:hover { background: #5a6268; }
+    #clearBtn { background: #6c757d; margin-bottom: 0; }
     #status { margin-top: 8px; font-size: 12px; color: #333; }
   </style>
 </head>
 <body>
   <h2>Vetlog Scraper</h2>
-  <div id="activeChat">Active Chat: None</div>
+  
+  <div class="target-box">
+    <label>Target Chat Name (Exact Match):</label>
+    <input type="text" id="targetInput" placeholder="e.g. Vetlog-TestGroup">
+    <button id="setTargetBtn" style="margin-top: 8px; margin-bottom: 0;">Lock Target</button>
+    <div id="lockedStatus">Currently Locked: None</div>
+  </div>
+
   <div id="count">Messages captured: 0</div>
   <button id="scrollBtn">Auto-Scroll Up & Scrape</button>
   <button id="downloadBtn">Download as TXT</button>
   <button id="clearBtn">Clear Captured Messages</button>
   <div id="status"></div>
+  
   <script src="popup.js"></script>
 </body>
 </html>

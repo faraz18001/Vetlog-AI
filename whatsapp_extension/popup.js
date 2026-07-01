@@ -1,32 +1,64 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const activeChatEl = document.getElementById('activeChat');
+  const targetInput = document.getElementById('targetInput');
+  const setTargetBtn = document.getElementById('setTargetBtn');
+  const lockedStatus = document.getElementById('lockedStatus');
   const countEl = document.getElementById('count');
   const statusEl = document.getElementById('status');
   const downloadBtn = document.getElementById('downloadBtn');
   const scrollBtn = document.getElementById('scrollBtn');
   const clearBtn = document.getElementById('clearBtn');
 
-  // Load initial state
-  chrome.storage.local.get(['capturedChats', 'activeChatName', 'isScrolling'], (result) => {
-    const chats = result.capturedChats || {};
-    const activeChat = result.activeChatName || "None";
-    const messages = chats[activeChat] || [];
-    
-    activeChatEl.textContent = `Active Chat: ${activeChat}`;
-    countEl.textContent = `Messages captured: ${messages.length}`;
+  // Load existing target and counts on open
+  chrome.storage.local.get(['manualTargetChat', 'capturedChats', 'isScrolling'], (result) => {
+    const manualTarget = result.manualTargetChat || "";
+    if (manualTarget) {
+      targetInput.value = manualTarget;
+      lockedStatus.textContent = `Currently Locked: ${manualTarget}`;
+      lockedStatus.classList.add('locked');
+      
+      const chats = result.capturedChats || {};
+      const messages = chats[manualTarget] || [];
+      countEl.textContent = `Messages captured: ${messages.length}`;
+    }
     updateScrollButton(!!result.isScrolling);
   });
 
-  // Keep UI updated on storage changes
+  // Handle setting the target lock manually
+  setTargetBtn.addEventListener('click', () => {
+    const targetName = targetInput.value.trim();
+    if (!targetName) {
+      chrome.storage.local.set({ manualTargetChat: "" }, () => {
+        lockedStatus.textContent = "Currently Locked: None";
+        lockedStatus.classList.remove('locked');
+        countEl.textContent = "Messages captured: 0";
+      });
+      return;
+    }
+
+    chrome.storage.local.set({ manualTargetChat: targetName }, () => {
+      lockedStatus.textContent = `Currently Locked: ${targetName}`;
+      lockedStatus.classList.add('locked');
+      statusEl.textContent = `Scraper now locked to "${targetName}".`;
+      
+      // Update count for new target
+      chrome.storage.local.get(['capturedChats'], (result) => {
+        const chats = result.capturedChats || {};
+        const messages = chats[targetName] || [];
+        countEl.textContent = `Messages captured: ${messages.length}`;
+      });
+    });
+  });
+
+  // Listen for storage changes to update counts live
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local') {
-      chrome.storage.local.get(['capturedChats', 'activeChatName'], (result) => {
-        const chats = result.capturedChats || {};
-        const activeChat = result.activeChatName || "None";
-        const messages = chats[activeChat] || [];
-        
-        activeChatEl.textContent = `Active Chat: ${activeChat}`;
-        countEl.textContent = `Messages captured: ${messages.length}`;
+      chrome.storage.local.get(['manualTargetChat', 'capturedChats'], (result) => {
+        const target = result.manualTargetChat || "";
+        if (target) {
+          const chats = result.capturedChats || {};
+          const messages = chats[target] || [];
+          countEl.textContent = `Messages captured: ${messages.length}`;
+        }
       });
 
       if (changes.isScrolling) {
@@ -35,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Helper to style the scroll button
   function updateScrollButton(isScrolling) {
     if (isScrolling) {
       scrollBtn.textContent = 'Stop Scrolling';
@@ -46,12 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Toggle scroll handler
+  // Scroll Button logic
   scrollBtn.addEventListener('click', () => {
-    chrome.storage.local.get(['isScrolling'], (result) => {
+    chrome.storage.local.get(['isScrolling', 'manualTargetChat'], (result) => {
+      if (!result.manualTargetChat) {
+        statusEl.textContent = "Error: Please lock a Target Chat first.";
+        return;
+      }
+
       const nextScrollingState = !result.isScrolling;
       chrome.storage.local.set({ isScrolling: nextScrollingState }, () => {
-        // Send message to current WhatsApp tab content script
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (tabs && tabs[0]) {
             chrome.tabs.sendMessage(tabs[0].id, {
@@ -64,57 +99,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusEl.textContent = nextScrollingState ? "Scrolling active..." : "Scrolling stopped.";
               }
             });
-          } else {
-            statusEl.textContent = "No active tab found.";
-            chrome.storage.local.set({ isScrolling: false });
           }
         });
       });
     });
   });
 
-  // Clear messages handler (active chat only)
+  // Clear Button
   clearBtn.addEventListener('click', () => {
-    chrome.storage.local.get(['activeChatName', 'capturedChats'], (result) => {
-      const activeChat = result.activeChatName || "None";
-      if (activeChat === "None") {
-        statusEl.textContent = "No active chat to clear.";
-        return;
-      }
+    chrome.storage.local.get(['manualTargetChat', 'capturedChats'], (result) => {
+      const target = result.manualTargetChat || "";
+      if (!target) return;
       
-      if (confirm(`Are you sure you want to clear captured messages for "${activeChat}"?`)) {
+      if (confirm(`Clear all captured memory for "${target}"?`)) {
         const chats = result.capturedChats || {};
-        chats[activeChat] = [];
+        chats[target] = [];
         chrome.storage.local.set({ capturedChats: chats }, () => {
-          statusEl.textContent = `Cleared messages for "${activeChat}".`;
+          statusEl.textContent = `Cleared messages for "${target}".`;
           countEl.textContent = "Messages captured: 0";
-          // Notify content script to reset its in-memory set
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs && tabs[0]) {
-              chrome.tabs.sendMessage(tabs[0].id, { action: "clearSeenMessages" }, () => {
-                if (chrome.runtime.lastError) {
-                  // Ignore if tab is not loaded/reachable
-                }
-              });
-            }
+            if (tabs && tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { action: "clearSeenMessages" });
           });
         });
       }
     });
   });
 
-  // UPDATED: Parser helper to convert WhatsApp timestamp (Handles "Yesterday" & weekdays)
+  // Date Parser
   function parseWhatsAppTimestamp(timestampStr) {
     if (!timestampStr) return new Date(0);
-    
     const now = new Date();
     const parts = timestampStr.split(', ');
     const timePart = parts[0].trim();
     const datePart = parts.length > 1 ? parts[1].trim().toLowerCase() : "";
+    let targetDate = new Date(); 
 
-    let targetDate = new Date(); // Defaults to today
-
-    // Handle relative words
     if (datePart === "yesterday") {
       targetDate.setDate(now.getDate() - 1);
     } else if (['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].includes(datePart)) {
@@ -122,60 +141,47 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetDay = days.indexOf(datePart);
       const currentDay = now.getDay();
       let diff = currentDay - targetDay;
-      if (diff <= 0) diff += 7; // Go back to the previous week's occurrence
+      if (diff <= 0) diff += 7; 
       targetDate.setDate(now.getDate() - diff);
     } else if (datePart.includes('/')) {
-      // Standard MM/DD/YYYY parsing fallback
       const datePartsArr = datePart.split('/');
       if (datePartsArr.length >= 3) {
         let first = parseInt(datePartsArr[0], 10);
         let second = parseInt(datePartsArr[1], 10);
         let year = parseInt(datePartsArr[2], 10);
-        
         if (year < 100) year += 2000;
-        
         let month = 0, day = 1;
         if (first > 12) { day = first; month = second - 1; } 
         else { month = first - 1; day = second; }
-        
         targetDate = new Date(year, month, day);
       }
     }
 
-    // Parse time part (e.g. "5:20 PM")
     const timeMatch = timePart.match(/(\d+):(\d+)\s*(AM|PM)?/i);
     if (timeMatch) {
       let hours = parseInt(timeMatch[1], 10);
       let minutes = parseInt(timeMatch[2], 10);
       const ampm = timeMatch[3];
-      
       if (ampm) {
         if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
         if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
       }
-      
       targetDate.setHours(hours, minutes, 0, 0);
     }
-
     return targetDate;
   }
 
-  // Download logs handler (active chat only)
+  // Download Button
   downloadBtn.addEventListener('click', () => {
-    chrome.storage.local.get(['capturedChats', 'activeChatName'], (result) => {
+    chrome.storage.local.get(['capturedChats', 'manualTargetChat'], (result) => {
+      const target = result.manualTargetChat || "";
+      if (!target) return;
       const chats = result.capturedChats || {};
-      const activeChat = result.activeChatName || "None";
-      const messages = chats[activeChat] || [];
+      const messages = chats[target] || [];
 
-      if (messages.length === 0) {
-        statusEl.textContent = `No messages captured for "${activeChat}" yet.`;
-        return;
-      }
+      if (messages.length === 0) return;
 
-      // Sort messages chronologically
-      messages.sort((a, b) => {
-        return parseWhatsAppTimestamp(a.timestamp) - parseWhatsAppTimestamp(b.timestamp);
-      });
+      messages.sort((a, b) => parseWhatsAppTimestamp(a.timestamp) - parseWhatsAppTimestamp(b.timestamp));
 
       let textContent = '';
       for (const msg of messages) {
@@ -186,12 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const safeChatName = activeChat.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const safeChatName = target.replace(/[^a-z0-9]/gi, '_').toLowerCase();
       a.download = `whatsapp_${safeChatName}_${Date.now()}.txt`;
       a.click();
       URL.revokeObjectURL(url);
-
-      statusEl.textContent = `Downloaded ${messages.length} messages for "${activeChat}".`;
     });
   });
 });

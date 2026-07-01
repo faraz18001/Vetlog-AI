@@ -1,7 +1,43 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from datetime import datetime
+
 from app.database import get_session, RawMessage
 from app.schemas import RawMessageBatchIn
+
+
+def _parse_timestamp(ts: str) -> str:
+    """
+    Convert a WhatsApp-format timestamp to ISO-8601 before storing.
+
+    Auto-detects locale format so it works regardless of whether
+    WhatsApp was set to US (MM/DD/YYYY) or DD/MM/YYYY.
+
+    Migration dependency: run data/migrate_timestamps.py FIRST so
+    existing rows are converted to ISO. Then this parser keeps new
+    ingests consistent.
+    """
+    ts = ts.strip()
+
+    # Already ISO — leave untouched
+    if ts.startswith("202"):
+        return ts
+
+    # US format: "9:03 PM, 3/27/2026"
+    try:
+        dt = datetime.strptime(ts, "%I:%M %p, %m/%d/%Y")
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        pass
+
+    # DD/MM/YYYY format: "5:49 pm, 30/06/2026"
+    try:
+        dt = datetime.strptime(ts, "%I:%M %p, %d/%m/%Y")
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        pass
+
+    return ts  # Unrecognised — store as-is
 
 router = APIRouter(prefix="/webhook/extension", tags=["webhook"])
 
@@ -30,7 +66,9 @@ def ingest_batch(payload: RawMessageBatchIn, db: Session = Depends(get_session))
 
     inserted_count = 0
     for msg_data in payload.messages:
-        signature = (msg_data.sender, msg_data.text, msg_data.timestamp)
+        # Normalise timestamp to ISO so it matches stored format after migration
+        normalized_ts = _parse_timestamp(msg_data.timestamp)
+        signature = (msg_data.sender, msg_data.text, normalized_ts)
 
         if signature in seen_signatures:
             continue
@@ -39,7 +77,7 @@ def ingest_batch(payload: RawMessageBatchIn, db: Session = Depends(get_session))
             chat_name=msg_data.chat_name,
             sender=msg_data.sender,
             text=msg_data.text,
-            timestamp=msg_data.timestamp,
+            timestamp=normalized_ts,
         )
         db.add(new_message)
 

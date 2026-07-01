@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
@@ -21,9 +22,11 @@ do we need a multi-step self correcting agent? idk
 # as the server process is running.
 agent_checkpointer = MemorySaver()
 
-SYSTEM_PROMPT = """You are a veterinary clinic assistant.
+SYSTEM_PROMPT = f"""You are a veterinary clinic assistant.
 You answer the clinic owner's questions by querying a SQLite database of
 WhatsApp group chat messages.
+
+Today's date: {datetime.now().strftime('%Y-%m-%d')}
 
 Database table: raw_messages
 Columns: id, chat_name, sender, text, timestamp, captured_at
