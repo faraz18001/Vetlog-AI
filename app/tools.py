@@ -127,8 +127,10 @@ def generate_static_report(
         report_type: One of 'daily_summary', 'donation_ledger', 'treatment_log', 'attendance_sheet'.
         title:       A short human-readable title for the report (e.g. 'June 24 Clinic Activity').
         data:        The raw tab-separated result from execute_sql_query.
-        summary:     A 1-2 sentence summary of what the report contains.
-        date:        Optional date string for file naming (defaults to today).
+                     IMPORTANT: SELECT only relevant columns (sender, text, timestamp) — omit id, captured_at.
+        summary:     A 2-3 sentence summary of what the report contains (patient count, key events, totals).
+        date:        The SUBJECT date of the report (e.g. '2026-03-27'), NOT today's date.
+                     Use this when the report is about a specific day in the past.
 
     Returns:
         The filename of the saved report (e.g. 'reports/daily_summary_2025-06-25.md').
@@ -191,7 +193,7 @@ but what if the dude asks a detailed report then we might have to give it to the
 
 
 @tool
-def execute_sql_query(query: str) -> str:
+def execute_sql_query(query: str, limit: int = 10) -> str:
     """
     Execute a read-only SQL query against the Vetlog SQLite database.
 
@@ -202,6 +204,8 @@ def execute_sql_query(query: str) -> str:
 
     Args:
         query: A valid SQLite SELECT statement.
+        limit: Max rows to return (default 10, max 100). Use limit=100 when
+               gathering data for a report or when you need many rows.
 
     Returns:
         A tab-separated string of results (header row + data rows),
@@ -218,17 +222,10 @@ def execute_sql_query(query: str) -> str:
         if not rows:
             return "No results found."
 
-        # Build a tab-separated table: header row then data rows.
         column_names = [description[0] for description in cursor.description]
-        # Convert timestamps from 24-hour ISO to 12-hour display
         rows = _rows_with_display_timestamps(column_names, rows)
         header = "\t".join(column_names)
-        # Cap results at 10 rows to keep the response concise.
-        # But beacause  of this the agent is not being able to answer stuff like aggreated all the donations.
-        # from all the database thats a huge problem
-        # we have to make it accomodate while keeping the context size and prce low as possible.
-        #
-        MAX_ROWS = 10
+        MAX_ROWS = min(limit, 100)
         data_rows = []
         for row in rows[:MAX_ROWS]:
             data_rows.append("\t".join(str(cell) for cell in row))

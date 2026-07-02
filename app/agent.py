@@ -7,9 +7,19 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
-from app.tools import execute_sql_query, generate_dynamic_report, generate_static_report, query_to_inline_table
+from app.tools import (
+    execute_sql_query,
+    generate_dynamic_report,
+    generate_static_report,
+    query_to_inline_table,
+)
 
-tools = [execute_sql_query, query_to_inline_table, generate_static_report, generate_dynamic_report]
+tools = [
+    execute_sql_query,
+    query_to_inline_table,
+    generate_static_report,
+    generate_dynamic_report,
+]
 
 """
 Right now the agent is not self correcting meaning that if it threw a wrong query
@@ -22,11 +32,12 @@ do we need a multi-step self correcting agent? idk
 # as the server process is running.
 agent_checkpointer = MemorySaver()
 
-SYSTEM_PROMPT = f"""You are a veterinary clinic assistant.
+SYSTEM_PROMPT = (
+    f"""You are a veterinary clinic assistant.
 You answer the clinic owner's questions by querying a SQLite database of
 WhatsApp group chat messages.
 
-Today's date: {datetime.now().strftime('%Y-%m-%d')}
+Today's date: {datetime.now().strftime("%Y-%m-%d")}
 
 Database table: raw_messages
 Columns: id, chat_name, sender, text, timestamp, captured_at
@@ -50,16 +61,30 @@ Rules:
 - IMPORTANT: When you call generate_static_report, generate_dynamic_report, or query_to_inline_table, do NOT repeat the data in your
   text reply. The UI already shows the report/table as a preview card. Just confirm
   in one sentence that the report is ready (e.g. "Your attendance report is ready.").
+- For reports about a specific date: ALWAYS pass the date parameter to generate_static_report
+  (e.g. date='2026-03-27') so the title and filename use the report's subject date, not today.
+- For reports: SELECT specific columns (chat_name, sender, text, timestamp). Omit id and captured_at.
+- Write a meaningful 2-3 sentence summary for the summary parameter when calling generate_static_report.
+- For reports that need ALL matching data (treatment timelines, detailed reports): call
+  execute_sql_query(query=..., limit=100) with ORDER BY timestamp to get up to 100 rows.
+  Then pass that data to generate_dynamic_report or generate_static_report.
+- When writing reports with 20+ rows: group entries by week or condition instead of
+  listing every single row. Use the full data to produce an informative summary — never
+  abbreviate rows with "..." or "(continued)" placeholders.
 
 Examples:
 - Q: "Did Dr. Faraz treat Max?" → SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'
 - Q: "Total donations from Mrs. Fatima" → SELECT text FROM raw_messages WHERE text LIKE '%Mrs. Fatima%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'
 - Q: "Show me all donations from June" → call query_to_inline_table(query='SELECT * FROM raw_messages WHERE text LIKE '%PKR%' AND timestamp LIKE '2025-06%', title='All Donations from June')
 - Q: "Generate a donation report" → query donations, then call generate_static_report(report_type='donation_ledger', ...), then reply with one sentence only.
-- Q: "Create a treatment timeline for Rocky with notes" → query Rocky messages, then call generate_dynamic_report(title='Rocky Treatment Timeline', content='## Timeline\n\n...'), then reply with one sentence only."""
+- Q: "Create a treatment timeline for Rocky with notes" → query Rocky messages, then call generate_dynamic_report(title='Rocky Treatment Timeline', content='## Timeline\n\n...'), then reply with one sentence only.
+- Q: "Generate a daily summary report for March 27" → SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE timestamp LIKE '2026-03-27%' → generate_static_report(report_type='daily_summary', title='March 27 Clinic Activity', data=..., summary='X patients treated, Y staff on duty. Key events: ...', date='2026-03-27')
+- Q: "Generate a report for Oreo with treatment notes" → execute_sql_query(query='SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Oreo%' ORDER BY timestamp', limit=100) → generate_dynamic_report(title='Oreo Treatment Report', content=...)
 
-"""All of the build model functios are same we can literally creata  model class here and save
+"""
+    """All of the build model functios are same we can literally creata  model class here and save
 al ot lines of code and make this file less messy."""
+)
 
 
 def build_ollama_model(base_url: str, model_name: str, api_key: str):
@@ -67,8 +92,8 @@ def build_ollama_model(base_url: str, model_name: str, api_key: str):
     Create a ChatOllama or ChatOpenAI client for an Ollama endpoint.
 
     Ollama exposes two API flavours:
-    - Native Ollama API  (no '/v1' in the URL) → use ChatOllama
-    - OpenAI-compatible  ('/v1' in the URL)    → use ChatOpenAI
+    - Native Ollama API  (no '/v1' in the URL) - use ChatOllama
+    - OpenAI-compatible  ('/v1' in the URL)    - use ChatOpenAI
 
     Args:
         base_url:   The base URL of the Ollama server.
@@ -107,12 +132,12 @@ def build_ollama_model(base_url: str, model_name: str, api_key: str):
 def build_openai_compatible_model(provider: str, api_key: str, model_name: str):
     """
     Create a ChatOpenAI client for any OpenAI-compatible API endpoint.
-    
+
     Args:
         provider:   The provider name (e.g. 'groq', 'mistral', 'openrouter', 'openai').
         api_key:    The API key for the provider.
         model_name: The model identifier to use.
-        
+
     Returns:
         A ChatOpenAI instance pointed at the correct API.
     """
@@ -121,17 +146,18 @@ def build_openai_compatible_model(provider: str, api_key: str, model_name: str):
         "mistral": "https://api.mistral.ai/v1",
         "cerebras": "https://api.cerebras.ai/v1",
         "openrouter": "https://openrouter.ai/api/v1",
-        "openai": None  # Uses the default OpenAI URL
+        "openai": None,  # Uses the default OpenAI URL
     }
-    
+
     return ChatOpenAI(
         base_url=base_urls.get(provider),
         api_key=api_key,
         model=model_name,
         temperature=0.2,
-        default_headers={"HTTP-Referer": "https://vetlog.app"} if provider == "openrouter" else None
+        default_headers={"HTTP-Referer": "https://vetlog.app"}
+        if provider == "openrouter"
+        else None,
     )
-
 
 
 def build_gemini_model(api_key: str, model_name: str):
@@ -181,11 +207,11 @@ def get_llm_model():
         "mistral": "MISTRAL",
         "cerebras": "CEREBRAS",
         "openrouter": "OPENROUTER",
-        "openai": "OPENAI"
+        "openai": "OPENAI",
     }
-    
+
     prefix = env_prefixes.get(provider, "OPENAI")
-    
+
     if prefix == "OPENAI":
         api_key = os.getenv("OPENAI_API_KEY", "")
         model_name = os.getenv("DEFAULT_MODEL", "gpt-4o")
@@ -196,7 +222,7 @@ def get_llm_model():
     return build_openai_compatible_model(
         provider=provider if provider in env_prefixes else "openai",
         api_key=api_key,
-        model_name=model_name
+        model_name=model_name,
     )
 
 
@@ -225,12 +251,14 @@ def initialize_agent():
 
 _agent_instance = None
 
+
 def get_current_agent():
     """Returns the singleton agent instance, initializing it if necessary."""
     global _agent_instance
     if _agent_instance is None:
         _agent_instance = initialize_agent()
     return _agent_instance
+
 
 def reload_agent():
     """Forces the agent to re-initialize with the current environment variables."""
