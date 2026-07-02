@@ -1,0 +1,2 @@
+# Exclude sensitive files
+.env*

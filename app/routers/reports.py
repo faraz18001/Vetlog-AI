@@ -16,7 +16,7 @@ def get_report_content(filename: str):
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="Report not found.")
 
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
     return {"filename": filename, "content": content}
@@ -31,7 +31,7 @@ def export_report_html(filename: str):
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="Report not found.")
 
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         md_content = f.read()
 
     try:
