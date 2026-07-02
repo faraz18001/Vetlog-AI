@@ -142,10 +142,13 @@ def extract_steps(messages: list) -> list[AgentStep]:
                     query = tool_args.get("query", "").strip()
                     short_query = query[:120] + "…" if len(query) > 120 else query
                     steps.append(AgentStep(label="Querying full dataset", detail=short_query))
-                elif tool_name == "generate_report":
+                elif tool_name == "generate_static_report":
                     title = tool_args.get("title", "")
                     report_type = tool_args.get("report_type", "")
                     steps.append(AgentStep(label="Generating report", detail=f"{report_type}: {title}" if title else report_type))
+                elif tool_name == "generate_dynamic_report":
+                    title = tool_args.get("title", "")
+                    steps.append(AgentStep(label="Generating report", detail=title))
                 else:
                     steps.append(AgentStep(label=f"Calling {tool_name}", detail=str(tool_args)[:120]))
         elif class_name == "ToolMessage":
@@ -218,7 +221,11 @@ async def chat_stream(payload: ChatRequest):
                         tool_input = event.get("data", {}).get("input", {}) or {}
                         query = tool_input.get("query", "")
                         yield _sse({"type": "step", "label": "Querying full dataset", "detail": query[:120]})
-                    elif tool_name == "generate_report":
+                    elif tool_name == "generate_static_report":
+                        tool_input = event.get("data", {}).get("input", {}) or {}
+                        title = tool_input.get("title", "")
+                        yield _sse({"type": "step", "label": "Generating report", "detail": title})
+                    elif tool_name == "generate_dynamic_report":
                         tool_input = event.get("data", {}).get("input", {}) or {}
                         title = tool_input.get("title", "")
                         yield _sse({"type": "step", "label": "Generating report", "detail": title})
@@ -229,7 +236,8 @@ async def chat_stream(payload: ChatRequest):
                     output = _tool_output_str(event.get("data", {}).get("output", ""))
 
                     if output.startswith("Error:"):
-                        yield _sse({"type": "step", "label": "Query failed", "detail": ""})
+                        err_detail = output[7:] if output.startswith("Error: ") else ""
+                        yield _sse({"type": "step", "label": "Query failed", "detail": err_detail[:120]})
                     elif output.startswith("reports/") and "Rows:" in output:
                         table_path = output.splitlines()[0].strip()
                         yield _sse({"type": "step", "label": "Table saved", "detail": ""})

@@ -7,9 +7,9 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
-from app.tools import execute_sql_query, generate_report, query_to_inline_table
+from app.tools import execute_sql_query, generate_dynamic_report, generate_static_report, query_to_inline_table
 
-tools = [execute_sql_query, query_to_inline_table, generate_report]
+tools = [execute_sql_query, query_to_inline_table, generate_static_report, generate_dynamic_report]
 
 """
 Right now the agent is not self correcting meaning that if it threw a wrong query
@@ -34,7 +34,8 @@ Columns: id, chat_name, sender, text, timestamp, captured_at
 Steps (use tools in this order when needed):
 1. execute_sql_query — run your SQL SELECT first (for counts, sums, lookups, yes/no questions). Caps at 10 rows.
 2. query_to_inline_table — when the user wants to SEE all rows or a full dataset (e.g. "show all", "list every", "all 150 donations"). This tool writes the full unbounded result to a file and the UI renders it inline — no row limit.
-3. generate_report — only if user explicitly asks for a report
+3. generate_static_report — only if the user explicitly asks for a report that fits a standard category (daily_summary, donation_ledger, treatment_log, attendance_sheet).
+4. generate_dynamic_report — when the user asks for a custom report that does NOT fit a standard template. Write the full Markdown content yourself with any structure.
 
 Rules:
 - Use LIKE with wildcards for text searches (e.g. WHERE text LIKE '%Rocky%').
@@ -45,8 +46,8 @@ Rules:
 - Use execute_sql_query for counts/sums/lookups (max 10 rows shown). Use query_to_inline_table when the user wants to SEE many rows or the full dataset (e.g. "show all", "list every", "every donation from June").
 - Keep answers short and conversational. Exception: when the user asks to "show" or "see" messages, include the actual message content (sender, text snippet, date) inline rather than just summarizing.
 - After query_to_inline_table, do NOT repeat the rows in your text reply. The UI shows the full table inline. Just state the row count and a one-line summary (e.g. "Here are all 150 donations from June.").
-- For report requests: query data first, then call generate_report.
-- IMPORTANT: When you call generate_report or query_to_inline_table, do NOT repeat the data in your
+- For report requests: query data first, then call generate_static_report (for standard templates) or generate_dynamic_report (for custom reports).
+- IMPORTANT: When you call generate_static_report, generate_dynamic_report, or query_to_inline_table, do NOT repeat the data in your
   text reply. The UI already shows the report/table as a preview card. Just confirm
   in one sentence that the report is ready (e.g. "Your attendance report is ready.").
 
@@ -54,7 +55,8 @@ Examples:
 - Q: "Did Dr. Faraz treat Max?" → SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'
 - Q: "Total donations from Mrs. Fatima" → SELECT text FROM raw_messages WHERE text LIKE '%Mrs. Fatima%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'
 - Q: "Show me all donations from June" → call query_to_inline_table(query='SELECT * FROM raw_messages WHERE text LIKE '%PKR%' AND timestamp LIKE '2025-06%', title='All Donations from June')
-- Q: "Generate a donation report" → query donations, then call generate_report(report_type='donation_ledger', ...), then reply with one sentence only."""
+- Q: "Generate a donation report" → query donations, then call generate_static_report(report_type='donation_ledger', ...), then reply with one sentence only.
+- Q: "Create a treatment timeline for Rocky with notes" → query Rocky messages, then call generate_dynamic_report(title='Rocky Treatment Timeline', content='## Timeline\n\n...'), then reply with one sentence only."""
 
 """All of the build model functios are same we can literally creata  model class here and save
 al ot lines of code and make this file less messy."""

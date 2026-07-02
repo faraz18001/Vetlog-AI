@@ -105,7 +105,7 @@ def _rows_with_display_timestamps(column_names, rows):
 
 
 @tool
-def generate_report(
+def generate_static_report(
     report_type: str,
     title: str,
     data: str,
@@ -113,7 +113,11 @@ def generate_report(
     date: str = "",
 ) -> str:
     """
-    Generate a formatted Markdown report from SQL query results and save it.
+    Generate a formatted Markdown report using a predefined template and save it.
+
+    Use this when the user's report request fits one of the 4 standard
+    categories: daily_summary, donation_ledger, treatment_log, or attendance_sheet.
+    For custom or free-form reports, use generate_dynamic_report instead.
 
     Call this tool after execute_sql_query when the user asks for a structured
     report. The report is written to the reports/ directory and its filename is
@@ -149,6 +153,35 @@ def generate_report(
 
     with open(filepath, "w") as f:
         f.write(content)
+
+    return f"reports/{filename}"
+
+
+@tool
+def generate_dynamic_report(title: str, content: str) -> str:
+    """
+    Save a free-form Markdown report to a file.
+
+    Use this when the user's request does NOT fit a standard template.
+    Write the full Markdown content yourself — any structure, any format.
+    For standard categories (daily_summary, donation_ledger, treatment_log,
+    attendance_sheet), use generate_static_report instead.
+
+    Args:
+        title:   A short human-readable title for the report
+                 (e.g. 'Rocky Treatment History').
+        content: The full Markdown content of the report.
+
+    Returns:
+        The filename of the saved report (e.g. 'reports/rocky_treatment_2025-06-25.md').
+    """
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    safe_title = title.lower().replace(" ", "_").replace("/", "_")[:30]
+    filename = f"{safe_title}_{date_str}.md"
+    filepath = os.path.join(REPORTS_DIR, filename)
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(f"## {title}\n\n*Generated {date_str}*\n\n{content}\n")
 
     return f"reports/{filename}"
 
