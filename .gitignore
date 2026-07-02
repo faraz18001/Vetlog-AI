@@ -53,6 +53,9 @@ Thumbs.db
 !app/reports/
 !docs/
 
+# Logs
+logs/
+
 # Frontend
 frontend/node_modules/
 frontend/dist/
