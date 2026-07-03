@@ -108,7 +108,10 @@ def build_ollama_model(base_url: str, model_name: str, api_key: str):
     if is_openai_compatible:
         # Use the OpenAI-compatible client. If no key is supplied, pass the
         # string "ollama" as a placeholder (the library requires a non-empty value).
-        effective_key = api_key if api_key else "ollama"
+        if api_key:
+            effective_key = api_key
+        else:
+            effective_key = "ollama"
         return ChatOpenAI(
             base_url=base_url,
             api_key=effective_key,
@@ -121,11 +124,16 @@ def build_ollama_model(base_url: str, model_name: str, api_key: str):
     if api_key:
         client_kwargs["headers"] = {"Authorization": f"Bearer {api_key}"}
 
+    if client_kwargs:
+        kwargs_for_call = client_kwargs
+    else:
+        kwargs_for_call = None
+
     return ChatOllama(
         base_url=base_url,
         model=model_name,
         temperature=0.2,
-        client_kwargs=client_kwargs if client_kwargs else None,
+        client_kwargs=kwargs_for_call,
     )
 
 
@@ -219,8 +227,13 @@ def get_llm_model():
         api_key = os.getenv(f"{prefix}_API_KEY", "")
         model_name = os.getenv(f"{prefix}_MODEL", "")
 
+    if provider in env_prefixes:
+        resolved_provider = provider
+    else:
+        resolved_provider = "openai"
+
     return build_openai_compatible_model(
-        provider=provider if provider in env_prefixes else "openai",
+        provider=resolved_provider,
         api_key=api_key,
         model_name=model_name,
     )

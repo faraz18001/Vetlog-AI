@@ -63,10 +63,20 @@ def _tsv_to_markdown_table(data: str) -> str:
         return "_No data._"
 
     header = lines[0].split("\t")
-    rows = [line.split("\t") for line in lines[1:]]
+    rows = []
+    for line in lines[1:]:
+        rows.append(line.split("\t"))
 
     md = "| " + " | ".join(header) + " |\n"
-    md += "| " + " | ".join("---" for _ in header) + " |\n"
+
+    sep = "| "
+    for i in range(len(header)):
+        if i > 0:
+            sep += " | "
+        sep += "---"
+    sep += " |\n"
+    md += sep
+
     for row in rows:
         md += "| " + " | ".join(row) + " |\n"
 
@@ -82,10 +92,12 @@ def _rows_with_display_timestamps(column_names, rows):
         return rows
 
     ts_idx = None
-    for idx, col in enumerate(column_names):
+    idx = 0
+    for col in column_names:
         if col.lower() == "timestamp":
             ts_idx = idx
             break
+        idx += 1
 
     if ts_idx is None:
         return rows
@@ -93,7 +105,11 @@ def _rows_with_display_timestamps(column_names, rows):
     formatted = []
     for row in rows:
         new_row = list(row)
-        val = str(new_row[ts_idx]) if new_row[ts_idx] is not None else ""
+        cell_val = new_row[ts_idx]
+        if cell_val is not None:
+            val = str(cell_val)
+        else:
+            val = ""
         if val.startswith("202"):
             try:
                 dt = datetime.strptime(val, "%Y-%m-%d %H:%M:%S")
@@ -136,7 +152,12 @@ def generate_static_report(
         The filename of the saved report (e.g. 'reports/daily_summary_2025-06-25.md').
     """
     if report_type not in _REPORT_TEMPLATES:
-        return f"Error: Unknown report_type '{report_type}'. Choose from: {', '.join(_REPORT_TEMPLATES)}"
+        template_keys = ""
+        for key in _REPORT_TEMPLATES:
+            if template_keys:
+                template_keys += ", "
+            template_keys += key
+        return "Error: Unknown report_type '" + report_type + "'. Choose from: " + template_keys
 
     date_str = date or datetime.now().strftime("%Y-%m-%d")
     table_md = _tsv_to_markdown_table(data)
@@ -146,11 +167,15 @@ def generate_static_report(
     filepath = os.path.join(REPORTS_DIR, filename)
 
     template = _REPORT_TEMPLATES[report_type]
+    if summary:
+        final_summary = summary
+    else:
+        final_summary = "Report: " + title
     content = template.format(
         date=date_str,
         title=title,
         table=table_md,
-        summary=summary or f"Report: {title}",
+        summary=final_summary,
     )
 
     with open(filepath, "w") as f:
@@ -222,13 +247,20 @@ def execute_sql_query(query: str, limit: int = 10) -> str:
         if not rows:
             return "No results found."
 
-        column_names = [description[0] for description in cursor.description]
+        column_names = []
+        for description in cursor.description:
+            column_names.append(description[0])
         rows = _rows_with_display_timestamps(column_names, rows)
         header = "\t".join(column_names)
         MAX_ROWS = min(limit, 100)
         data_rows = []
         for row in rows[:MAX_ROWS]:
-            data_rows.append("\t".join(str(cell) for cell in row))
+            row_str = ""
+            for cell in row:
+                if row_str:
+                    row_str += "\t"
+                row_str += str(cell)
+            data_rows.append(row_str)
 
         result = header + "\n" + "\n".join(data_rows)
 
@@ -282,7 +314,9 @@ def query_to_inline_table(query: str, title: str = "Query Results") -> str:
         if not rows:
             return "No results found."
 
-        column_names = [description[0] for description in cursor.description]
+        column_names = []
+        for description in cursor.description:
+            column_names.append(description[0])
         # Convert timestamps from 24-hour ISO to 12-hour display
         rows = _rows_with_display_timestamps(column_names, rows)
 
@@ -292,9 +326,16 @@ def query_to_inline_table(query: str, title: str = "Query Results") -> str:
         truncated = len(rows) > MAX_ROWS
         rows_to_write = rows[:MAX_ROWS]
 
-        # Build TSV then convert to a GitHub-flavoured markdown table.
+        # Build data lines manually
+        data_lines = []
+        for row in rows_to_write:
+            row_str = ""
+            for cell in row:
+                if row_str:
+                    row_str += "\t"
+                row_str += str(cell)
+            data_lines.append(row_str)
         header = "\t".join(column_names)
-        data_lines = ["\t".join(str(cell) for cell in row) for row in rows_to_write]
         tsv = header + "\n" + "\n".join(data_lines)
         table_md = _tsv_to_markdown_table(tsv)
 
