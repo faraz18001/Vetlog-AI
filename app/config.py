@@ -15,3 +15,6 @@ LLM_MODEL = os.environ.get("LLM_MODEL", "llama3")
 # Price is USD per 1 000 tokens. Leave as 0 if unknown; counts still show.
 INPUT_TOKEN_PRICE_PER_1K = float(os.environ.get("INPUT_TOKEN_PRICE_PER_1K", "0"))
 OUTPUT_TOKEN_PRICE_PER_1K = float(os.environ.get("OUTPUT_TOKEN_PRICE_PER_1K", "0"))
+
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "vetlog-dev-secret-change-in-prod")
+JWT_ALGORITHM = "HS256"

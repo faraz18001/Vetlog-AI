@@ -1,6 +1,14 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    create_engine,
+)
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.config import DATABASE_URL
@@ -30,6 +38,31 @@ class RawMessage(Base):
     captured_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class Users(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String, nullable=False, unique=True)
+    display_name = Column(String, nullable=False)
+    password = Column(String(256), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ConversationLog(Base):
+    __tablename__ = "conversation_logs"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    thread_id = Column(String(64), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    thread_name = Column(String, nullable=False)
+    turn_number = Column(Integer, nullable=False)
+    role = Column(String(16), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    tool_name = Column(String, nullable=True)
+    tool_args = Column(Text, nullable=True)
+    tool_output = Column(Text, nullable=True)
+    tokens_used = Column(Integer, nullable=True)
+
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 
@@ -37,7 +70,10 @@ def init_db():
 def get_session():
     db = SessionLocal()
     try:
-        return db
+        yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 

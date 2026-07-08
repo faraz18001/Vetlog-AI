@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
 from app.agent import get_current_agent
-from app.routers import chat, config, reports, webhook
+from app.routers import auth, chat, config, reports, webhook
 
 app = FastAPI(title="Vetlog AI Backend")
 
@@ -17,6 +17,7 @@ app.add_middleware(
 
 # Register all route modules
 app.include_router(config.router)
+app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(reports.router)
 app.include_router(webhook.router)

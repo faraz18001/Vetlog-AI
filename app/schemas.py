@@ -1,6 +1,8 @@
 from datetime import datetime
+from sys import displayhook
 from typing import Optional
 
+from click.decorators import password_option
 from pydantic import BaseModel
 
 
@@ -28,7 +30,7 @@ class TokenUsage(BaseModel):
 
 
 class AgentStep(BaseModel):
-    label: str   # Short human-readable title shown in the step chain
+    label: str  # Short human-readable title shown in the step chain
     detail: str  # Extra info (e.g. the SQL query, or row count)
 
 
@@ -37,8 +39,8 @@ class ChatResponse(BaseModel):
     thread_id: str
     usage: TokenUsage | None = None
     report_path: str | None = None  # e.g. 'reports/daily_summary_2025-06-25_title.md'
-    table_path: str | None = None   # e.g. 'reports/query_2025-06-30_143022.md'
-    steps: list[AgentStep] = []     # Intermediate agent steps for the frontend step chain
+    table_path: str | None = None  # e.g. 'reports/query_2025-06-30_143022.md'
+    steps: list[AgentStep] = []  # Intermediate agent steps for the frontend step chain
 
 
 class UsageStats(BaseModel):
@@ -60,11 +62,31 @@ class RawMessageOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class LLMConfigUpdate(BaseModel):
     provider: str
     model: str
     api_key: str
 
+
 class LLMConfigResponse(BaseModel):
     provider: str
     model: str
+
+
+class UserRegisterRequest(BaseModel):
+    username: str
+    display_name: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user_id: int
+    username: str
+    display_name: str
