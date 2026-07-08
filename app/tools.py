@@ -131,13 +131,22 @@ def generate_static_report(
     """
     Generate a formatted Markdown report using a predefined template and save it.
 
-    Use this when the user's report request fits one of the 4 standard
-    categories: daily_summary, donation_ledger, treatment_log, or attendance_sheet.
-    For custom or free-form reports, use generate_dynamic_report instead.
+    1. Use this when the user's report request fits one of the 4 standard
+    2. categories: daily_summary, donation_ledger, treatment_log, or attendance_sheet.
+    3. For reports about a specific date: ALWAYS pass the date parameter to generate_static_report
+      (e.g. date='2026-03-27') so the title and filename use the report's subject date, not today.
+    4. For reports: SELECT specific columns (chat_name, sender, text, timestamp). Omit id and captured_at.
+    5. When writing reports with 20+ rows: group entries by week or condition instead of
+      listing every single row. Use the full data to produce an informative summary — never
+      abbreviate rows with "..." or "(continued)" placeholders.
 
     Call this tool after execute_sql_query when the user asks for a structured
     report. The report is written to the reports/ directory and its filename is
     returned — the UI will display the markdown and offer a PDF download.
+
+    IMPORTANT: When you call generate_static_report,do NOT repeat the data in your
+      text reply. The UI already shows the report/table as a preview card. Just confirm
+      in one sentence that the report is ready (e.g. "Your attendance report is ready.").
 
     Args:
         report_type: One of 'daily_summary', 'donation_ledger', 'treatment_log', 'attendance_sheet'.
@@ -157,7 +166,12 @@ def generate_static_report(
             if template_keys:
                 template_keys += ", "
             template_keys += key
-        return "Error: Unknown report_type '" + report_type + "'. Choose from: " + template_keys
+        return (
+            "Error: Unknown report_type '"
+            + report_type
+            + "'. Choose from: "
+            + template_keys
+        )
 
     date_str = date or datetime.now().strftime("%Y-%m-%d")
     table_md = _tsv_to_markdown_table(data)
@@ -189,10 +203,17 @@ def generate_dynamic_report(title: str, content: str) -> str:
     """
     Save a free-form Markdown report to a file.
 
-    Use this when the user's request does NOT fit a standard template.
-    Write the full Markdown content yourself — any structure, any format.
-    For standard categories (daily_summary, donation_ledger, treatment_log,
+    1. Use this when the user's request does NOT fit a standard template.
+    2. Write the full Markdown content yourself — any structure, any format.
+    3. For standard categories (daily_summary, donation_ledger, treatment_log,
     attendance_sheet), use generate_static_report instead.
+    4. When writing reports with 20+ rows: group entries by week or condition instead of
+      listing every single row. Use the full data to produce an informative summary — never
+      abbreviate rows with "..." or "(continued)" placeholders.
+
+    IMPORTANT: When you call generate_dynamic_report, do NOT repeat the data in your
+      text reply. The UI already shows the report/table as a preview card. Just confirm
+      in one sentence that the report is ready (e.g. "Your treatment history report is ready.").
 
     Args:
         title:   A short human-readable title for the report
@@ -226,6 +247,13 @@ def execute_sql_query(query: str, limit: int = 10) -> str:
     messages scraped from the clinic's group chats. Use this tool after
     writing the correct SQL for the user's question. If the query fails,
     the error message is returned so you can fix and retry.
+
+    SQL patterns for this DB:
+    - Use LIKE with wildcards for text searches (e.g. WHERE text LIKE '%Rocky%')
+    - Use GROUP BY and COUNT for summaries
+    - For "total donations" use SUM on numeric values in text
+    - Never invent data — only return what the query actually finds
+    - Default chat names in the DB follow a prefix pattern; use LIKE for matching
 
     Args:
         query: A valid SQLite SELECT statement.

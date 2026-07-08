@@ -254,5 +254,59 @@
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%rabies%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
     "tags": ["hallucination", "edge"]
+  },
+  {
+    "id": "RT1",
+    "difficulty": "medium",
+    "question": "Show all donations from June 2026",
+    "expected_tool": "query_to_inline_table",
+    "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%PKR%' AND timestamp LIKE '2026-06%'",
+    "expected_min_rows": 1,
+    "tags": ["routing", "inline-table"]
+  },
+  {
+    "id": "RT2",
+    "difficulty": "medium",
+    "question": "List all patients treated in this clinic",
+    "expected_tool": "query_to_inline_table",
+    "gold_sql": "SELECT * FROM raw_messages WHERE chat_name LIKE 'TEST_%'",
+    "expected_min_rows": 1,
+    "tags": ["routing", "inline-table"]
+  },
+  {
+    "id": "RT3",
+    "difficulty": "medium",
+    "question": "Generate a daily summary report for March 27, 2026",
+    "expected_tool": "generate_static_report",
+    "gold_sql": "SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE timestamp LIKE '2026-03-27%' ORDER BY timestamp",
+    "expected_min_rows": 1,
+    "tags": ["routing", "static-report"]
+  },
+  {
+    "id": "RT4",
+    "difficulty": "medium",
+    "question": "Create a donation ledger report",
+    "expected_tool": "generate_static_report",
+    "gold_sql": "SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%PKR%' OR text LIKE '%donation%' OR text LIKE '%donated%' ORDER BY timestamp",
+    "expected_min_rows": 1,
+    "tags": ["routing", "static-report"]
+  },
+  {
+    "id": "RT5",
+    "difficulty": "medium",
+    "question": "Create a treatment timeline for Rocky",
+    "expected_tool": "generate_dynamic_report",
+    "gold_sql": "SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Rocky%' ORDER BY timestamp",
+    "expected_min_rows": 1,
+    "tags": ["routing", "dynamic-report"]
+  },
+  {
+    "id": "RT6",
+    "difficulty": "medium",
+    "question": "Make a report about Oreo's treatment history",
+    "expected_tool": "generate_dynamic_report",
+    "gold_sql": "SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Oreo%' ORDER BY timestamp",
+    "expected_min_rows": 1,
+    "tags": ["routing", "dynamic-report"]
   }
 ]

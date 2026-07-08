@@ -49,8 +49,8 @@ CASES_PATH = os.path.join(os.path.dirname(__file__), "test_cases.json")
 with open(CASES_PATH) as _f:
     ALL_CASES = json.load(_f)
 
-# Limit to first 10 for fast runs; remove the slice to run all.
-CASES = ALL_CASES[:10]
+# Uncomment the slice to limit to first 10 for fast runs.
+CASES = ALL_CASES
 
 # Initialise the agent once — it's expensive to re-build per test.
 _agent = None
@@ -86,8 +86,17 @@ def extract_sql_from_messages(messages) -> str:
     for msg in messages:
         if hasattr(msg, "tool_calls") and msg.tool_calls:
             for tc in msg.tool_calls:
-                if tc["name"] == "execute_sql_query":
+                if tc["name"] in ("execute_sql_query", "query_to_inline_table"):
                     return tc["args"].get("query", "")
+    return ""
+
+
+def extract_tool_name_from_messages(messages) -> str:
+    """Return the name of the first tool the agent called."""
+    for msg in messages:
+        if hasattr(msg, "tool_calls") and msg.tool_calls:
+            for tc in msg.tool_calls:
+                return tc["name"]
     return ""
 
 
@@ -226,6 +235,49 @@ class HallucinationMetric(BaseMetric):
         return self.score >= self.threshold
 
 
+class ToolRoutingMetric(BaseMetric):
+    """Checks that the agent called the expected tool for the user's request.
+
+    Uses the optional 'expected_tool' field in the test case. If not set,
+    the test is skipped (passes automatically).
+    """
+
+    async_mode: bool = False
+    threshold: float = 1.0
+
+    def __init__(self):
+        BaseMetric.__init__(self)
+        self.score = 0.0
+        self.reason = ""
+
+    def measure(self, test_case: LLMTestCase):
+        meta = test_case.metadata or {}
+        expected_tool = meta.get("expected_tool", "")
+
+        if not expected_tool:
+            self.score = 1.0
+            self.reason = "No routing expectation — skipped"
+            return self.score
+
+        actual_tool = meta.get("agent_tool", "")
+
+        if actual_tool == expected_tool:
+            self.score = 1.0
+            self.reason = f"Correct tool: {actual_tool}"
+        else:
+            displayed = actual_tool if actual_tool else "(none)"
+            self.score = 0.0
+            self.reason = f"Wrong tool: expected {expected_tool}, got {displayed}"
+
+        return self.score
+
+    async def a_measure(self, test_case, *args, **kwargs):
+        return self.measure(test_case)
+
+    def is_successful(self):
+        return self.score >= self.threshold
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # pytest-based tests (used by `deepeval test run`)
 # These are what generate the traces visible in `deepeval inspect`.
@@ -254,6 +306,7 @@ def run_case_with_tracing(case: dict) -> LLMTestCase:
         messages = result["messages"]
         agent_sql = extract_sql_from_messages(messages)
         agent_answer = extract_answer_from_messages(messages)
+        agent_tool = extract_tool_name_from_messages(messages)
         error = None
     except Exception as e:
         agent_sql = ""
@@ -267,6 +320,8 @@ def run_case_with_tracing(case: dict) -> LLMTestCase:
         expected_output=case["gold_sql"],
         metadata={
             "agent_sql": agent_sql,
+            "agent_tool": agent_tool,
+            "expected_tool": case.get("expected_tool", ""),
             "case_id": case["id"],
             "difficulty": case["difficulty"],
             "tags": case.get("tags", []),
@@ -286,7 +341,7 @@ def test_agent_case(case):
     tc = run_case_with_tracing(case)
     assert_test(
         test_case=tc,
-        metrics=[SqlCorrectnessMetric(), HallucinationMetric()],
+        metrics=[SqlCorrectnessMetric(), HallucinationMetric(), ToolRoutingMetric()],
         run_async=False,
     )
 
