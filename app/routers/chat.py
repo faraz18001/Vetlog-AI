@@ -378,13 +378,14 @@ from app.database import get_session
 @router.post("/chat/", response_model=ChatResponse)
 def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
     agent = get_current_agent()
+    callback = HallucinationCallback()
     config = {
         "configurable": {"thread_id": payload.thread_id},
         "metadata": {
             "user_id": payload.user_id,
             "thread_id": payload.thread_id,
         },
-        "callbacks": [HallucinationCallback()],
+        "callbacks": [callback],
     }
     result = agent.invoke({"messages": [("user", payload.message)]}, config=config)
     messages = result["messages"]
@@ -433,19 +434,21 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
         report_path=report_path,
         table_path=table_path,
         steps=steps,
+        eval_warnings=callback.get_warnings(),
     )
 
 
 @router.post("/chat/stream/")
 async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
     agent = get_current_agent()
+    callback = HallucinationCallback()
     config = {
         "configurable": {"thread_id": payload.thread_id},
         "metadata": {
             "user_id": payload.user_id,
             "thread_id": payload.thread_id,
         },
-        "callbacks": [HallucinationCallback()],
+        "callbacks": [callback],
     }
 
     async def event_generator():
@@ -654,6 +657,9 @@ async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
                 role="assistant",
                 content=trace_text,
             )
+
+        for warning in callback.get_warnings():
+            yield _sse({"type": "eval_warning", "message": warning})
 
         yield _sse(
             {

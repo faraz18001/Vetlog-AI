@@ -145,6 +145,19 @@ export function useChat() {
               );
             } else if (evt.type === "error") {
               throw new Error(evt.message ?? "Agent error");
+            } else if (evt.type === "eval_warning") {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId
+                    ? {
+                        ...m,
+                        evalWarnings: (m.evalWarnings || []).concat([
+                          evt.message,
+                        ]),
+                      }
+                    : m,
+                ),
+              );
             }
           }
         }

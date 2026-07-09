@@ -155,6 +155,20 @@ function MessageBubble({ message }) {
         {!isUser && !isStreaming && !isError && message.usage && (
           <UsageBadge usage={message.usage} />
         )}
+
+        {/* Eval warnings — hallucination checks */}
+        {!isUser && !isStreaming && message.evalWarnings && message.evalWarnings.length > 0 && (
+          <div className="eval-warnings">
+            {message.evalWarnings.map(function (w, i) {
+              return (
+                <div key={i} className="eval-warning-item">
+                  <span className="eval-warning-icon">!</span>
+                  <span className="eval-warning-text">{w}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </motion.div>
   );

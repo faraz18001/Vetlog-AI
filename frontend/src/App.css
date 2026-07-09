@@ -407,6 +407,46 @@ body {
     font-weight: 500;
 }
 
+/* Eval warning badges */
+.eval-warnings {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.eval-warning-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: rgba(234, 179, 8, 0.12);
+    border: 1px solid rgba(234, 179, 8, 0.35);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: #b45309;
+    line-height: 1.5;
+}
+
+.eval-warning-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+}
+
+.eval-warning-text {
+    flex: 1;
+}
+
 /* =============================================
    Inline Table Card — large dataset rendered in chat
    ============================================= */

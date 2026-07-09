@@ -15,7 +15,7 @@ class RawMessageBatchIn(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: strf
     thread_id: str = "web-session-default"
     user_id: int | None = None
 
@@ -39,6 +39,7 @@ class ChatResponse(BaseModel):
     report_path: str | None = None  # e.g. 'reports/daily_summary_2025-06-25_title.md'
     table_path: str | None = None  # e.g. 'reports/query_2025-06-30_143022.md'
     steps: list[AgentStep] = []  # Intermediate agent steps for the frontend step chain
+    eval_warnings: list[str] = []  # Hallucination check warnings
 
 
 class UsageStats(BaseModel):
