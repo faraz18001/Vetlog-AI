@@ -1,18 +1,32 @@
 import { useState } from "react";
 import { useChat } from "./hooks/useChat.js";
+import { useAuth } from "./hooks/useAuth.js";
 import ChatWindow from "./components/ChatWindow.jsx";
 import InputBar from "./components/InputBar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import SettingsModal from "./components/SettingsModal.jsx";
-import { Cat, PanelLeft } from "lucide-react";
+import LoginPage from "./components/LoginPage.jsx";
+import { Cat, PanelLeft, LogOut } from "lucide-react";
 import "./App.css";
 
 
 
 export default function App() {
+  const { user, login, register, logout, authError, setAuthError } = useAuth();
   const { messages, isLoading, sendMessage, clearChat, sessionUsage } = useChat();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  if (!user) {
+    return (
+      <LoginPage
+        onLogin={login}
+        onRegister={register}
+        authError={authError}
+        setAuthError={setAuthError}
+      />
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -59,6 +73,17 @@ export default function App() {
                 )}
               </div>
             )}
+            <span className="topbar-user" title={user.display_name}>
+              {user.display_name}
+            </span>
+            <button
+              className="topbar-icon-btn"
+              onClick={logout}
+              aria-label="Log out"
+              title="Log out"
+            >
+              <LogOut size={16} strokeWidth={2.5} />
+            </button>
           </div>
         </header>
 

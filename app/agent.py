@@ -1,10 +1,11 @@
 import os
+import sqlite3
 from datetime import datetime
 
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
 from app.tools import (
@@ -28,9 +29,11 @@ do we need a multi-step self correcting agent? idk
 """
 
 
-# Shared checkpointer — keeps conversation memory across requests as long
-# as the server process is running.
-agent_checkpointer = MemorySaver()
+# Shared checkpointer — persists conversation memory to the main database
+# so agent state survives server restarts.
+agent_checkpointer = SqliteSaver(
+    conn=sqlite3.connect("vetlog.db", check_same_thread=False)
+)
 
 
 def get_system_prompt() -> str:
@@ -233,7 +236,7 @@ def initialize_agent():
     Build and return the LangGraph ReAct agent.
 
     The agent is given the SQL tool and the system prompt, and uses the
-    shared MemorySaver checkpointer so conversation history is preserved
+    shared SqliteSaver checkpointer so conversation history is preserved
     between requests (keyed by thread_id).
 
     Returns:

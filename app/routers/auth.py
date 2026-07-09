@@ -9,7 +9,7 @@ from app.config import JWT_ALGORITHM, JWT_SECRET_KEY
 from app.database import Users, get_session
 from app.schemas import AuthResponse, LoginRequest, UserRegisterRequest
 
-router = APIRouter(prefix="", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def create_jwt(user: Users) -> str:

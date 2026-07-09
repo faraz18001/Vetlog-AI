@@ -197,6 +197,13 @@ body {
     font-weight: 500;
 }
 
+.topbar-user {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    font-family: var(--font-display);
+    font-weight: 600;
+}
+
 /* =============================================
    Report Card
    ============================================= */

@@ -1,8 +1,5 @@
 from datetime import datetime
-from sys import displayhook
-from typing import Optional
 
-from click.decorators import password_option
 from pydantic import BaseModel
 
 
@@ -20,6 +17,7 @@ class RawMessageBatchIn(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     thread_id: str = "web-session-default"
+    user_id: int | None = None
 
 
 class TokenUsage(BaseModel):
