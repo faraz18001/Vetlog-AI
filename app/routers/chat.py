@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.agent import get_current_agent
 from app.config import INPUT_TOKEN_PRICE_PER_1K, OUTPUT_TOKEN_PRICE_PER_1K
 from app.database import ConversationLog
+from app.evaluator import HallucinationCallback
 from app.schemas import AgentStep, ChatRequest, ChatResponse, TokenUsage, UsageStats
 
 router = APIRouter(prefix="", tags=["chat"])
@@ -383,6 +384,7 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
             "user_id": payload.user_id,
             "thread_id": payload.thread_id,
         },
+        "callbacks": [HallucinationCallback()],
     }
     result = agent.invoke({"messages": [("user", payload.message)]}, config=config)
     messages = result["messages"]
@@ -443,6 +445,7 @@ async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
             "user_id": payload.user_id,
             "thread_id": payload.thread_id,
         },
+        "callbacks": [HallucinationCallback()],
     }
 
     async def event_generator():
