@@ -43,14 +43,30 @@ export function useChat() {
       setMessages((prev) => [...prev, userMsg, aiMsg]);
       setIsLoading(true);
 
+      var userId = null;
+      try {
+        var authRaw = localStorage.getItem("vetlog_auth");
+        if (authRaw) {
+          var auth = JSON.parse(authRaw);
+          userId = auth.user_id;
+        }
+      } catch (e) {
+        // ignore — fall back to null
+      }
+
+      var body = {
+        message: text.trim(),
+        thread_id: threadId.current,
+      };
+      if (userId) {
+        body.user_id = userId;
+      }
+
       try {
         const res = await fetch("/api/chat/stream/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: text.trim(),
-            thread_id: threadId.current,
-          }),
+          body: JSON.stringify(body),
           signal: controller.signal,
         });
 
@@ -174,5 +190,5 @@ export function useChat() {
     { input_tokens: 0, output_tokens: 0, total_tokens: 0, cost_usd: 0 },
   );
 
-  return { messages, isLoading, sendMessage, clearChat, sessionUsage };
+  return { messages, isLoading, sendMessage, clearChat, sessionUsage, threadId: threadId.current };
 }

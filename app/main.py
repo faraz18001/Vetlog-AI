@@ -1,11 +1,23 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
-from app.agent import get_current_agent
+from app.agent import get_current_agent, init_checkpointer
 from app.routers import auth, chat, config, reports, webhook
 
-app = FastAPI(title="Vetlog AI Backend")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    await init_checkpointer()
+    get_current_agent()
+    print("[Vetlog] Agent ready.")
+    yield
+
+
+app = FastAPI(title="Vetlog AI Backend", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,16 +33,6 @@ app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(reports.router)
 app.include_router(webhook.router)
-
-
-@app.on_event("startup")
-def startup():
-    """Initialise the database and the LangGraph agent on server start."""
-    init_db()
-    # Initialize the singleton agent here so it's ready before the first request
-    get_current_agent()
-    print("[Vetlog] Agent ready.")
-
 
 @app.get("/")
 def root():

@@ -1,8 +1,8 @@
 import os
-import sqlite3
 from datetime import datetime
 
-from langgraph.checkpoint.sqlite import SqliteSaver
+import aiosqlite
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
@@ -31,9 +31,15 @@ do we need a multi-step self correcting agent? idk
 
 # Shared checkpointer — persists conversation memory to the main database
 # so agent state survives server restarts.
-agent_checkpointer = SqliteSaver(
-    conn=sqlite3.connect("vetlog.db", check_same_thread=False)
-)
+# Initialised during FastAPI lifespan (async); referenced by initialize_agent().
+_agent_checkpointer = None
+
+
+async def init_checkpointer():
+    """Create the shared AsyncSqliteSaver — called once during app startup."""
+    global _agent_checkpointer
+    conn = await aiosqlite.connect("vetlog.db")
+    _agent_checkpointer = AsyncSqliteSaver(conn=conn)
 
 
 def get_system_prompt() -> str:
@@ -236,7 +242,7 @@ def initialize_agent():
     Build and return the LangGraph ReAct agent.
 
     The agent is given the SQL tool and the system prompt, and uses the
-    shared SqliteSaver checkpointer so conversation history is preserved
+    Shared AsyncSqliteSaver checkpointer so conversation history is preserved
     between requests (keyed by thread_id).
 
     Returns:
@@ -247,7 +253,7 @@ def initialize_agent():
     agent_graph = create_react_agent(
         model=chat_model,
         tools=tools,
-        checkpointer=agent_checkpointer,
+        checkpointer=_agent_checkpointer,
         prompt=get_system_prompt(),
     )
 
