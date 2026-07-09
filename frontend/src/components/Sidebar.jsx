@@ -3,22 +3,14 @@ import { MessageCirclePlus, ClipboardList, Settings, CircleUserRound } from "luc
 import { motion, AnimatePresence } from "framer-motion";
 import "./Sidebar.css";
 
-export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled, onOpenSettings, onSelectThread }) {
+export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled, onOpenSettings, onSelectThread, userId }) {
   const [conversations, setConversations] = useState([]);
 
   useEffect(function () {
-    var userId = null;
-    try {
-      var authRaw = localStorage.getItem("vetlog_auth");
-      if (authRaw) {
-        var auth = JSON.parse(authRaw);
-        userId = auth.user_id;
-      }
-    } catch (e) {
+    if (!userId) {
+      setConversations([]);
       return;
     }
-
-    if (!userId) return;
 
     fetch("/api/conversations/?user_id=" + userId)
       .then(function (res) { return res.json(); })
@@ -28,7 +20,7 @@ export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled, onOpenSe
       .catch(function () {
         // ignore
       });
-  }, []);
+  }, [userId]);
 
   function groupByDate(threads) {
     var today = new Date();

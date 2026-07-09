@@ -26,6 +26,8 @@ export default function App() {
       .then(function (data) {
         if (data.length > 0) {
           loadThread(data[0].thread_id);
+        } else {
+          clearChat();
         }
       })
       .catch(function () {
@@ -55,6 +57,7 @@ export default function App() {
         isNewChatDisabled={messages.length === 0 && !isLoading} 
         onOpenSettings={() => setIsSettingsOpen(true)}
         onSelectThread={loadThread}
+        userId={user.user_id}
       />
       
       <SettingsModal 

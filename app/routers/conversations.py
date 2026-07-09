@@ -30,6 +30,7 @@ def list_conversations(
             (ConversationLog.thread_id == subquery.c.thread_id)
             & (ConversationLog.created_at == subquery.c.latest_at),
         )
+        .filter(ConversationLog.user_id == user_id)
         .order_by(desc(subquery.c.latest_at))
         .all()
     )
