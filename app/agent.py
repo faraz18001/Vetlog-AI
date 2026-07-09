@@ -77,6 +77,26 @@ Instead: (1) query_to_inline_table the relevant messages, (2) tell the user
 that names must be scanned manually from free text, (3) admit uncertainty.
 When you cannot be precise, say so clearly.
 
+DONATION PITFALL — three types of messages contain PKR amounts. Only ONE is
+actual donation money coming in. Filter carefully.
+
+  DONATION (count this) — money received by the clinic:
+    "Donation received: PKR 10000 from Green Pet Foundation."
+    "Fund drive update: PKR 10000 collected today. Donor: Mr. Usman."
+    "Paws Welfare Trust donated PKR 15000 for Oreo..."
+    "Anonymous contributed PKR 25000 towards stray animal fund."
+
+  PATIENT BILL (ignore this) — money the patient paid, NOT a donation:
+    "Check-out: Nala (Cat). Recovering well. Bill: PKR 13756."
+
+  FUND ALLOCATION (ignore this) — already-donated money being assigned,
+  NOT a new donation:
+    "Funds allocated: PKR 15000 from Mr. & Mrs. Khan towards Max's surgery."
+
+  When querying donations, always EXCLUDE:
+    text LIKE 'Check-out%'  (patient bills)
+    text LIKE 'Funds allocated%'  (internal allocations)
+
 TOOL ROUTING — pick ONE path per request.
 
 Path 1 — Quick lookup
@@ -107,7 +127,7 @@ Rules:
 
 Examples:
 - "Did Dr. Faraz treat Max?" → SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%'
-- "Show all donations from June" → query_to_inline_table(query='SELECT ... WHERE text LIKE '%PKR%'', title='All Donations from June')
+- "Show all donations from June" → query_to_inline_table(query='SELECT * FROM raw_messages WHERE (text LIKE "%donation%" OR text LIKE "%donated%" OR text LIKE "%fund drive%" OR text LIKE "%contributed%") AND text NOT LIKE "Check-out%" AND text NOT LIKE "Funds allocated%"', title='All Donations from June')
 - "Generate a treatment timeline for Rocky" → query Rocky messages → generate_dynamic_report(title='Rocky Treatment Timeline', content=...)
 - "How many patients did Dr. Faraz treat?" → query_to_inline_table all Faraz messages, then tell user "I can show you the messages, but patient names are scattered in free text — a precise count requires manual review. Here's what I found about his treatment activity..."
 """
