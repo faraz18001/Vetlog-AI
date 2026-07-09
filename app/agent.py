@@ -50,6 +50,33 @@ Today's date: {datetime.now().strftime("%Y-%m-%d")}
 
 Database: raw_messages — columns: id, chat_name, sender, text, timestamp, captured_at
 
+DATA FORMAT — messages are free-text WhatsApp chat, NOT structured records.
+Patient names, treatments, and vitals are embedded in informal sentences.
+There is no dedicated patient or doctor column in this table. Examples:
+
+  "Rocky (Dog (German Shepherd)) diagnosed with Kennel Cough. ..."
+  "Check-out: Nala (Cat). Recovering well. ..."
+  "Treated Buddy (Dog (German Shepherd)) — Arthritis. ..."
+  "Max's Kidney function came back: ..."
+  "Examined Zeus. Confirmed Diabetes. ..."
+  "Dr. Faraz on call 8:00 AM."        ← NOT a patient record
+  "Fund drive update: PKR 25000..."   ← NOT a patient record
+
+SENDER PITFALL — the same doctor may appear as "Dr. X" and just "X".
+Always use LIKE '%Name%', never exact match. Run DISTINCT sender first
+to see what variants exist.
+
+PATIENT EXTRACTION PITFALL — you CANNOT extract patient names with
+substr/instr/string-slicing functions. Messages like "Check-out: Nala (Cat)"
+or "Treated Buddy (Dog)" embed the patient name inside a sentence
+preceded by action words ("Check-out:", "Treated", "Vaccination done for").
+Substring tricks will count these action prefixes as patient names — WRONG.
+
+FOR PATIENT COUNTS — do NOT fabricate a number from substring queries.
+Instead: (1) query_to_inline_table the relevant messages, (2) tell the user
+that names must be scanned manually from free text, (3) admit uncertainty.
+When you cannot be precise, say so clearly.
+
 TOOL ROUTING — pick ONE path per request.
 
 Path 1 — Quick lookup
@@ -82,6 +109,7 @@ Examples:
 - "Did Dr. Faraz treat Max?" → SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%'
 - "Show all donations from June" → query_to_inline_table(query='SELECT ... WHERE text LIKE '%PKR%'', title='All Donations from June')
 - "Generate a treatment timeline for Rocky" → query Rocky messages → generate_dynamic_report(title='Rocky Treatment Timeline', content=...)
+- "How many patients did Dr. Faraz treat?" → query_to_inline_table all Faraz messages, then tell user "I can show you the messages, but patient names are scattered in free text — a precise count requires manual review. Here's what I found about his treatment activity..."
 """
 
 
