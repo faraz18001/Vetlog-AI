@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useChat } from "./hooks/useChat.js";
 import { useAuth } from "./hooks/useAuth.js";
 import ChatWindow from "./components/ChatWindow.jsx";
@@ -13,9 +13,25 @@ import "./App.css";
 
 export default function App() {
   const { user, login, register, logout, authError, setAuthError } = useAuth();
-  const { messages, isLoading, sendMessage, clearChat, sessionUsage } = useChat();
+  const { messages, isLoading, sendMessage, clearChat, loadThread, sessionUsage } = useChat();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  useEffect(function () {
+    if (!user) return;
+
+    var url = "/api/conversations/?user_id=" + user.user_id;
+    fetch(url)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.length > 0) {
+          loadThread(data[0].thread_id);
+        }
+      })
+      .catch(function () {
+        // ignore — sidebar will still display history
+      });
+  }, [user]);
 
   if (!user) {
     return (
@@ -38,6 +54,7 @@ export default function App() {
         onNewChat={clearChat} 
         isNewChatDisabled={messages.length === 0 && !isLoading} 
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onSelectThread={loadThread}
       />
       
       <SettingsModal 

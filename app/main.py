@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
 from app.agent import get_current_agent, init_checkpointer
-from app.routers import auth, chat, config, reports, webhook
+from app.routers import auth, chat, config, conversations, reports, webhook
 
 
 @asynccontextmanager
@@ -31,6 +31,7 @@ app.add_middleware(
 app.include_router(config.router)
 app.include_router(auth.router)
 app.include_router(chat.router)
+app.include_router(conversations.router)
 app.include_router(reports.router)
 app.include_router(webhook.router)
 

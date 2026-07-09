@@ -88,3 +88,16 @@ class AuthResponse(BaseModel):
     user_id: int
     username: str
     display_name: str
+
+
+class ConversationThread(BaseModel):
+    thread_id: str
+    thread_name: str
+    updated_at: datetime
+
+
+class ConversationMessage(BaseModel):
+    role: str
+    content: str
+    thread_name: str
+    created_at: datetime

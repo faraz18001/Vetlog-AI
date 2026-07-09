@@ -176,6 +176,42 @@ export function useChat() {
     threadId.current = uid();
   }, []);
 
+  const loadThread = useCallback(async (targetThreadId) => {
+    abortRef.current?.abort();
+    setIsLoading(false);
+
+    var userId = null;
+    try {
+      var authRaw = localStorage.getItem("vetlog_auth");
+      if (authRaw) {
+        var auth = JSON.parse(authRaw);
+        userId = auth.user_id;
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    if (!userId) return;
+
+    var url = "/api/conversations/" + targetThreadId + "?user_id=" + userId;
+    var res = await fetch(url);
+    if (!res.ok) return;
+
+    var data = await res.json();
+    var msgs = [];
+    for (var i = 0; i < data.length; i++) {
+      msgs.push({
+        id: uid(),
+        role: data[i].role,
+        content: data[i].content,
+        timestamp: new Date(data[i].created_at),
+      });
+    }
+
+    threadId.current = targetThreadId;
+    setMessages(msgs);
+  }, []);
+
   // Derived session totals from all messages in state
   const sessionUsage = messages.reduce(
     (acc, m) => {
@@ -190,5 +226,5 @@ export function useChat() {
     { input_tokens: 0, output_tokens: 0, total_tokens: 0, cost_usd: 0 },
   );
 
-  return { messages, isLoading, sendMessage, clearChat, sessionUsage, threadId: threadId.current };
+  return { messages, isLoading, sendMessage, clearChat, loadThread, sessionUsage, threadId: threadId.current };
 }
