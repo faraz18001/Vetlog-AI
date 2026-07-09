@@ -377,7 +377,13 @@ from app.database import get_session
 @router.post("/chat/", response_model=ChatResponse)
 def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
     agent = get_current_agent()
-    config = {"configurable": {"thread_id": payload.thread_id}}
+    config = {
+        "configurable": {"thread_id": payload.thread_id},
+        "metadata": {
+            "user_id": payload.user_id,
+            "thread_id": payload.thread_id,
+        },
+    }
     result = agent.invoke({"messages": [("user", payload.message)]}, config=config)
     messages = result["messages"]
     last_message = messages[-1]
@@ -431,7 +437,13 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
 @router.post("/chat/stream/")
 async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
     agent = get_current_agent()
-    config = {"configurable": {"thread_id": payload.thread_id}}
+    config = {
+        "configurable": {"thread_id": payload.thread_id},
+        "metadata": {
+            "user_id": payload.user_id,
+            "thread_id": payload.thread_id,
+        },
+    }
 
     async def event_generator():
         report_path = None
