@@ -38,7 +38,7 @@ class ChatResponse(BaseModel):
     usage: TokenUsage | None = None
     report_path: str | None = None  # e.g. 'reports/daily_summary_2025-06-25_title.md'
     steps: list[AgentStep] = []     # Intermediate agent steps for the frontend step chain
-
+    used_tool: bool = False  # True if agent called at least one tool this turn
 
 class UsageStats(BaseModel):
     total_requests: int

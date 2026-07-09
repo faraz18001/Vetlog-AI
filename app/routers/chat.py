@@ -17,6 +17,19 @@ _usage = {
     "total_cost_usd": 0.0,
 }
 
+def response_used_tool(messages: list) -> bool:
+    """
+    Returns True if the agent called at least one tool in this response.
+    Used to detect guardrail violations where the agent answers from
+    general knowledge without querying the database.
+    """
+    for message in messages:
+        if type(message).__name__ == "AIMessage":
+            tool_calls = getattr(message, "tool_calls", []) or []
+            if tool_calls:
+                return True
+    return False
+
 def extract_content(message) -> str:
     content = message.content
     if isinstance(content, str):
@@ -118,6 +131,7 @@ def chat_endpoint(payload: ChatRequest):
     accumulate_usage(usage)
     report_path = find_report_path(messages)
     steps = extract_steps(messages)
+    used_tool = response_used_tool(messages)   
 
     return ChatResponse(
         response=response_text,
@@ -125,8 +139,8 @@ def chat_endpoint(payload: ChatRequest):
         usage=usage,
         report_path=report_path,
         steps=steps,
+        used_tool=used_tool,                  
     )
-
 @router.post("/chat/stream/")
 async def chat_stream(payload: ChatRequest):
     agent = get_current_agent()
@@ -140,6 +154,7 @@ async def chat_stream(payload: ChatRequest):
         tools_in_flight = 0
         tools_ever_started = False
         text_flushed = False
+        tool_was_called = False
 
         async def flush_text_buffer():
             nonlocal text_flushed
@@ -159,6 +174,7 @@ async def chat_stream(payload: ChatRequest):
                 if kind == "on_tool_start":
                     tools_in_flight += 1
                     tools_ever_started = True
+                    tool_was_called = True
                     tool_name = event.get("name", "")
                     if tool_name == "execute_sql_query":
                         tool_input = event.get("data", {}).get("input", {}) or {}
@@ -247,7 +263,7 @@ async def chat_stream(payload: ChatRequest):
             "cost_usd": round(input_cost + output_cost, 6),
         }
         accumulate_usage(TokenUsage(**usage))
-        yield f"data: {json.dumps({'type': 'done', 'thread_id': payload.thread_id, 'report_path': report_path, 'usage': usage})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'thread_id': payload.thread_id, 'report_path': report_path, 'usage': usage, 'used_tool': tool_was_called})}\n\n"
 
     return StreamingResponse(
         event_generator(),
