@@ -7,7 +7,7 @@ from app.providers import PROVIDERS, get_models_for_provider
 from app.routers.auth import get_current_user
 from app.schemas import UserSettingsResponse, UserSettingsUpdate
 
-router = APIRouter(prefix="/api/user", tags=["settings"])
+router = APIRouter(prefix="/user", tags=["settings"])
 
 
 def _mask_api_key(key: str) -> str:
@@ -90,18 +90,18 @@ def list_providers():
 @router.get("/models")
 async def list_models(
     provider: str = Query(..., description="Provider id (ollama, openai, gemini, ...)"),
+    api_key: str = Query("", description="Optional API key override (uses saved key if empty)"),
     user=Depends(get_current_user),
     db: Session = Depends(get_session),
 ):
-    settings = (
-        db.query(UserSetting)
-        .filter(UserSetting.user_id == user.id)
-        .first()
-    )
-
-    api_key = ""
-    if settings and settings.api_key:
-        api_key = decrypt_api_key(settings.api_key)
+    if not api_key:
+        settings = (
+            db.query(UserSetting)
+            .filter(UserSetting.user_id == user.id)
+            .first()
+        )
+        if settings and settings.api_key:
+            api_key = decrypt_api_key(settings.api_key)
 
     result = await get_models_for_provider(provider, api_key)
     return result

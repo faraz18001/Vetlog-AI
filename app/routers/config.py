@@ -6,7 +6,7 @@ from app.agent import reload_agent
 from app.config_manager import update_env_file
 from app.schemas import LLMConfigResponse, LLMConfigUpdate
 
-router = APIRouter(prefix="/api/config/llm", tags=["config"])
+router = APIRouter(prefix="/config/llm", tags=["config"])
 
 
 @router.get("", response_model=LLMConfigResponse)

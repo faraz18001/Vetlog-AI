@@ -53,12 +53,15 @@ export default function SettingsModal({ isOpen, onClose, user }) {
       });
   }
 
-  function fetchModelsForProvider(prov) {
+  function fetchModelsForProvider(prov, key) {
     if (!prov) return;
     setIsFetchingModels(true);
     setModelError(null);
 
     var url = "/api/user/models?provider=" + encodeURIComponent(prov);
+    if (key) {
+      url = url + "&api_key=" + encodeURIComponent(key);
+    }
     fetch(url, { headers: headers })
       .then(function (res) { return res.json(); })
       .then(function (data) {
@@ -89,11 +92,22 @@ export default function SettingsModal({ isOpen, onClose, user }) {
       });
   }, [isOpen]);
 
-  // When provider changes, fetch models for it
+  // Fetch models for Ollama immediately on provider change (needs no API key)
   useEffect(function () {
     if (!isOpen || !provider || isLoading) return;
-    fetchModelsForProvider(provider);
+    if (provider === "ollama") {
+      fetchModelsForProvider(provider);
+    }
   }, [provider, isOpen]);
+
+  function handleApiKeyKeyDown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (apiKey) {
+        fetchModelsForProvider(provider, apiKey);
+      }
+    }
+  }
 
   function handleSave(e) {
     e.preventDefault();
@@ -255,12 +269,18 @@ export default function SettingsModal({ isOpen, onClose, user }) {
                       id="apikey"
                       value={apiKey}
                       onChange={function (e) { setApiKey(e.target.value); }}
+                      onKeyDown={handleApiKeyKeyDown}
                       className="form-input"
                       placeholder={savedKeyHint || "Enter your API key"}
                     />
                     {savedKeyHint && (
                       <p className="form-hint">
                         Current key: {savedKeyHint}. Leave blank to keep it.
+                      </p>
+                    )}
+                    {provider !== "ollama" && !isFetchingModels && models.length === 0 && (
+                      <p className="form-hint">
+                        Enter your API key and press Enter to load available models.
                       </p>
                     )}
                   </div>
