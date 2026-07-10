@@ -1,95 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.crypto import decrypt_api_key, encrypt_api_key
 from app.database import UserSetting, get_session
+from app.providers import PROVIDERS, get_models_for_provider
 from app.routers.auth import get_current_user
-from app.schemas import ProviderModelInfo, UserSettingsResponse, UserSettingsUpdate
+from app.schemas import UserSettingsResponse, UserSettingsUpdate
 
 router = APIRouter(prefix="/api/user", tags=["settings"])
-
-PROVIDER_MODELS = {
-    "ollama": ProviderModelInfo(
-        id="ollama",
-        name="Ollama",
-        models=[
-            "gpt-oss:20b-cloud",
-            "llama3",
-            "llama3.1",
-            "mistral",
-            "qwen2.5",
-            "deepseek-r1",
-            "deepseek-v3",
-            "phi4",
-            "codellama",
-        ],
-    ),
-    "openai": ProviderModelInfo(
-        id="openai",
-        name="OpenAI",
-        models=[
-            "gpt-4o",
-            "gpt-4o-mini",
-            "gpt-4-turbo",
-            "o3-mini",
-            "o1",
-            "gpt-3.5-turbo",
-        ],
-    ),
-    "gemini": ProviderModelInfo(
-        id="gemini",
-        name="Gemini",
-        models=[
-            "gemini-2.5-flash-lite",
-            "gemini-2.5-pro",
-            "gemini-2.0-flash",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash",
-        ],
-    ),
-    "groq": ProviderModelInfo(
-        id="groq",
-        name="Groq",
-        models=[
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant",
-            "mixtral-8x7b-32768",
-            "gemma2-9b-it",
-            "deepseek-r1-distill-llama-70b",
-        ],
-    ),
-    "mistral": ProviderModelInfo(
-        id="mistral",
-        name="Mistral",
-        models=[
-            "mistral-small-latest",
-            "mistral-medium-latest",
-            "mistral-large-latest",
-            "codestral-latest",
-            "open-mistral-nemo",
-        ],
-    ),
-    "cerebras": ProviderModelInfo(
-        id="cerebras",
-        name="Cerebras",
-        models=[
-            "llama-3.3-70b",
-            "llama-3.1-8b",
-            "llama-3.1-70b",
-        ],
-    ),
-    "openrouter": ProviderModelInfo(
-        id="openrouter",
-        name="OpenRouter",
-        models=[
-            "auto:free",
-            "openai/gpt-4o",
-            "anthropic/claude-sonnet",
-            "google/gemini-2.0-flash",
-            "meta-llama/llama-3.3-70b",
-        ],
-    ),
-}
 
 
 def _mask_api_key(key: str) -> str:
@@ -166,4 +84,24 @@ def update_settings(
 
 @router.get("/config/providers")
 def list_providers():
-    return {"providers": list(PROVIDER_MODELS.values())}
+    return {"providers": list(PROVIDERS.values())}
+
+
+@router.get("/models")
+async def list_models(
+    provider: str = Query(..., description="Provider id (ollama, openai, gemini, ...)"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_session),
+):
+    settings = (
+        db.query(UserSetting)
+        .filter(UserSetting.user_id == user.id)
+        .first()
+    )
+
+    api_key = ""
+    if settings and settings.api_key:
+        api_key = decrypt_api_key(settings.api_key)
+
+    result = await get_models_for_provider(provider, api_key)
+    return result

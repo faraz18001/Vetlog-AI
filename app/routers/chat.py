@@ -8,9 +8,10 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.agent import get_current_agent
+from app.agent import get_current_agent, initialize_agent
 from app.config import INPUT_TOKEN_PRICE_PER_1K, OUTPUT_TOKEN_PRICE_PER_1K
-from app.database import ConversationLog
+from app.crypto import decrypt_api_key
+from app.database import ConversationLog, UserSetting
 from app.schemas import AgentStep, ChatRequest, ChatResponse, TokenUsage, UsageStats
 
 router = APIRouter(prefix="", tags=["chat"])
@@ -374,9 +375,34 @@ def extract_steps(messages: list) -> list[AgentStep]:
 from app.database import get_session
 
 
+def _get_agent_for_user(user_id: int | None, db: Session):
+    if user_id is None:
+        return get_current_agent()
+
+    settings = (
+        db.query(UserSetting)
+        .filter(UserSetting.user_id == user_id)
+        .first()
+    )
+    if not settings or not settings.api_key:
+        return get_current_agent()
+
+    api_key = decrypt_api_key(settings.api_key)
+    if not api_key:
+        return get_current_agent()
+
+    return initialize_agent(
+        user_config={
+            "provider": settings.provider,
+            "model": settings.model,
+            "api_key": api_key,
+        }
+    )
+
+
 @router.post("/chat/", response_model=ChatResponse)
 def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
-    agent = get_current_agent()
+    agent = _get_agent_for_user(payload.user_id, db)
     config = {"configurable": {"thread_id": payload.thread_id}}
     result = agent.invoke({"messages": [("user", payload.message)]}, config=config)
     messages = result["messages"]
@@ -430,7 +456,7 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
 
 @router.post("/chat/stream/")
 async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
-    agent = get_current_agent()
+    agent = _get_agent_for_user(payload.user_id, db)
     config = {"configurable": {"thread_id": payload.thread_id}}
 
     async def event_generator():

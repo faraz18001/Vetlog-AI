@@ -177,37 +177,47 @@ def build_gemini_model(api_key: str, model_name: str):
     )
 
 
-def get_llm_model():
+def get_llm_model(user_config=None):
     """
-    Factory that picks and configures the right LLM based on .env settings.
+    Factory that picks and configures the right LLM.
 
-    Reads AGENT_PROVIDER to decide which provider to use:
-    - 'ollama' (default): Ollama Cloud or a local Ollama server.
-    - 'gemini':           Google Gemini via the Gemini Developer API.
-    - 'groq':             Groq via its OpenAI-compatible endpoint.
-    - 'mistral':          Mistral via its OpenAI-compatible endpoint.
-    - 'cerebras':         Cerebras via its OpenAI-compatible endpoint.
-    - 'openrouter':       OpenRouter via its OpenAI-compatible endpoint.
-    - anything else:      falls back to the standard OpenAI API.
+    If user_config is provided (from per-user DB settings), use those values.
+    Otherwise fall back to .env for backward compatibility.
+
+    Args:
+        user_config: Optional dict with keys 'provider', 'model', 'api_key'.
 
     Returns:
         A configured LangChain chat model instance.
     """
-    provider = os.getenv("AGENT_PROVIDER", "ollama").lower()
+    if user_config:
+        provider = user_config["provider"].lower()
+        model_name = user_config["model"]
+        api_key = user_config.get("api_key", "")
+    else:
+        provider = os.getenv("AGENT_PROVIDER", "ollama").lower()
+        model_name = None
+        api_key = ""
 
     if provider == "ollama":
         base_url = os.getenv("OLLAMA_BASE_URL", "https://ollama.com")
-        model_name = os.getenv("OLLAMA_MODEL", "gpt-oss:20b-cloud")
-        api_key = os.getenv("OLLAMA_API_KEY", "")
+        if not model_name:
+            model_name = os.getenv("OLLAMA_MODEL", "gpt-oss:20b-cloud")
+        if not api_key and not user_config:
+            api_key = os.getenv("OLLAMA_API_KEY", "")
         return build_ollama_model(base_url, model_name, api_key)
 
     if provider == "gemini":
+        if not model_name:
+            model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+        if not api_key and not user_config:
+            api_key = os.getenv("GOOGLE_API_KEY", "")
         return build_gemini_model(
-            api_key=os.getenv("GOOGLE_API_KEY", ""),
-            model_name=os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite"),
+            api_key=api_key,
+            model_name=model_name,
         )
 
-    # For all other OpenAI-compatible providers, grab their specific env vars
+    # For all other OpenAI-compatible providers
     env_prefixes = {
         "groq": "GROQ",
         "mistral": "MISTRAL",
@@ -216,14 +226,19 @@ def get_llm_model():
         "openai": "OPENAI",
     }
 
-    prefix = env_prefixes.get(provider, "OPENAI")
+    if not model_name:
+        prefix = env_prefixes.get(provider, "OPENAI")
+        if prefix == "OPENAI":
+            model_name = os.getenv("DEFAULT_MODEL", "gpt-4o")
+        else:
+            model_name = os.getenv(f"{prefix}_MODEL", "")
 
-    if prefix == "OPENAI":
-        api_key = os.getenv("OPENAI_API_KEY", "")
-        model_name = os.getenv("DEFAULT_MODEL", "gpt-4o")
-    else:
-        api_key = os.getenv(f"{prefix}_API_KEY", "")
-        model_name = os.getenv(f"{prefix}_MODEL", "")
+    if not api_key and not user_config:
+        prefix = env_prefixes.get(provider, "OPENAI")
+        if prefix == "OPENAI":
+            api_key = os.getenv("OPENAI_API_KEY", "")
+        else:
+            api_key = os.getenv(f"{prefix}_API_KEY", "")
 
     if provider in env_prefixes:
         resolved_provider = provider
@@ -237,18 +252,17 @@ def get_llm_model():
     )
 
 
-def initialize_agent():
+def initialize_agent(user_config=None):
     """
     Build and return the LangGraph ReAct agent.
 
-    The agent is given the SQL tool and the system prompt, and uses the
-    Shared AsyncSqliteSaver checkpointer so conversation history is preserved
-    between requests (keyed by thread_id).
+    Accepts an optional user_config dict (provider, model, api_key) from
+    per-user settings. Falls back to .env if not provided.
 
     Returns:
         A compiled LangGraph agent graph ready to call .invoke() on.
     """
-    chat_model = get_llm_model()
+    chat_model = get_llm_model(user_config)
 
     agent_graph = create_react_agent(
         model=chat_model,

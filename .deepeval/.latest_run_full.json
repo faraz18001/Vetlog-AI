@@ -1,1 +1,362 @@
-{"testFile": "tests/test_agent.py", "testCases": [{"name": "D1", "input": "Did Dr. Faraz treat a dog named Max?", "actualOutput": "Yes \u2013 Dr.\u202fFaraz has treated Max on several occasions. Here are a few excerpts:\n\n| Date & Time | Chat | Sender | Message |\n|-------------|------|--------|---------|\n| 3\u202fPM,\u202f3/28/2026 | TEST_Vetlog Clinical Group | Dr.\u202fFaraz | \u201cMax\u2019s Kidney function came back: positive for parasites. Treatment started.\u201d |\n| 8\u202fAM,\u202f4/3/2026 | TEST_Vetlog Clinical Group | Dr.\u202fFaraz | \u201cFollow\u2011up for Max: Much better.\u201d |\n| 6\u202fPM,\u202f4/7/2026 | TEST_Vetlog Clinical Group | Dr.\u202fFaraz | \u201cMax discharged. Recovering well.\u201d |\n\nThese messages confirm that Dr.\u202fFaraz has indeed treated the dog named Max.", "expectedOutput": "SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'", "success": true, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": true, "score": 1.0, "reason": "Correct \u2014 both returned 21 rows", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": true, "score": 1.0, "reason": "No hallucination detected", "strictMode": false}], "runDuration": 0.018422274999466026, "order": 0, "metadata": {"agent_sql": "SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'", "case_id": "D1", "difficulty": "easy", "tags": ["direct", "treatment"], "error": null}}, {"name": "D2", "input": "What did Nurse Ali administer to Coco?", "actualOutput": "Here\u2019s what Nurse\u202fAli recorded as having given Coco:\n\n| Date & Time | Medication & Dose | Note |\n|-------------|-------------------|------|\n| 5\u202fPM,\u202f4/17/2026 | **Carprofen** \u2013 1 tablet | \u201cAdministered Carprofen to Coco.\u201d |\n| 8:23\u202fAM,\u202f4/18/2026 | **Carprofen** \u2013 7\u202fml | \u201cAdministered Carprofen to Coco (Parrot).\u201d |\n| 9:26\u202fPM,\u202f4/21/2026 | **Omeprazole** \u2013 3 tablets | \u201cAdministered Omeprazole to Coco.\u201d |\n| 8:59\u202fPM,\u202f5/18/2026 | **Praziquantel** \u2013 3 tablets | \u201cAdministered Praziquantel to Coco.\u201d |\n| 5:00\u202fPM,\u202f6/20/2026 | **Flea treatment** \u2013 dosage not specified | \u201cFlea treatment administered.\u201d |\n\nThese are the only entries in the chat where Nurse\u202fAli explicitly logged administering medication to Coco.", "expectedOutput": "SELECT * FROM raw_messages WHERE sender LIKE '%Nurse Ali%' AND text LIKE '%Coco%' AND chat_name LIKE 'TEST_%'", "success": false, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Row count mismatch \u2014 gold: 25, agent: 0", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Hallucination \u2014 data exists but agent said nothing found", "strictMode": false}], "runDuration": 0.053839901000173995, "order": 1, "metadata": {"agent_sql": "SELECT id, sender, text, timestamp FROM raw_messages WHERE chat_name LIKE 'TEST_%' AND text LIKE '%Nurse Ali%' AND text LIKE '%Coco%'", "case_id": "D2", "difficulty": "easy", "tags": ["direct", "medication"], "error": null}}, {"name": "D3", "input": "Was there a donation from Paws Welfare Trust?", "actualOutput": "Yes\u2014there have been several donations from Paws\u202fWelfare\u202fTrust. For example, Dr.\u202fFaraz noted a PKR\u202f2,000 contribution for medicine supply, and the Receptionist recorded a PKR\u202f5,000 donation on 6/4/2026. There are also multiple fund\u2011drive updates listing PKR\u202f5,000\u2013PKR\u202f25,000 gifts from the trust.", "expectedOutput": "SELECT * FROM raw_messages WHERE text LIKE '%Paws Welfare Trust%' AND chat_name LIKE 'TEST_%'", "success": false, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Row count mismatch \u2014 gold: 39, agent: 10", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Hallucination \u2014 data exists but agent said nothing found", "strictMode": false}], "runDuration": 0.0759454500002903, "order": 2, "metadata": {"agent_sql": "SELECT id, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Paws Welfare Trust%' AND chat_name LIKE 'TEST_%' ORDER BY timestamp DESC LIMIT 10;", "case_id": "D3", "difficulty": "easy", "tags": ["direct", "donation"], "error": null}}, {"name": "D4", "input": "Which animals were checked in by Receptionist Sara?", "actualOutput": "Receptionist\u202fSara has checked in the following animals (plus 43 more that aren\u2019t shown here):\n\n- Zeus  \n- Buddy  \n- Mrs.\u202fMiller\u2019s dog  \n- Cooper  \n- Charlie  \n- Nala  \n- Chloe  \n- the Labrador with the limp  \n- the Golden Retriever  \n- Shadow  \n\n(There are 43 additional check\u2011ins in the database.)", "expectedOutput": "SELECT * FROM raw_messages WHERE sender LIKE '%Receptionist Sara%' AND text LIKE '%checked in%' AND chat_name LIKE 'TEST_%'", "success": true, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": true, "score": 1.0, "reason": "Correct \u2014 both returned 53 rows", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": true, "score": 1.0, "reason": "No hallucination detected", "strictMode": false}], "runDuration": 0.07553372000256786, "order": 3, "metadata": {"agent_sql": "SELECT sender, text, timestamp FROM raw_messages WHERE sender LIKE '%Receptionist Sara%' AND (text LIKE '%checked in%' OR text LIKE '%check in%') AND chat_name LIKE 'TEST_%';", "case_id": "D4", "difficulty": "easy", "tags": ["direct", "checkin"], "error": null}}, {"name": "D5", "input": "Who was on duty at 10:00 AM?", "actualOutput": "At 10:00\u202fAM the clinic had two doctors on duty:\n\n| Sender | Message snippet | Timestamp |\n|--------|-----------------|-----------|\n| **Dr. Faraz** | \u201cDr. Faraz on duty 10:00\u202fAM. Cases: 6.\u201d | 1:47\u202fPM,\u202f4/27/2026 |\n| **Dr. Sarah\u202fJenkins** | \u201cDr. Sarah\u202fJenkins on duty 10:00\u202fAM. Cases: 10.\u201d | 2:56\u202fAM,\u202f4/4/2026 |\n\nThe Admin Desk also noted \u201cDr. Faraz on duty 10:00\u202fAM\u201d in a separate reminder, but the two doctors listed above are the ones explicitly scheduled for that time.", "expectedOutput": "SELECT * FROM raw_messages WHERE text LIKE '%on duty%10:00 AM%' AND chat_name LIKE 'TEST_%'", "success": false, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Row count mismatch \u2014 gold: 7, agent: 20", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Hallucination \u2014 data exists but agent said nothing found", "strictMode": false}], "runDuration": 0.08152256599714747, "order": 4, "metadata": {"agent_sql": "SELECT id, sender, text, timestamp FROM raw_messages WHERE text LIKE '%10:00%' AND chat_name LIKE 'TEST_%' ORDER BY timestamp LIMIT 20;", "case_id": "D5", "difficulty": "easy", "tags": ["direct", "attendance"], "error": null}}, {"name": "S1", "input": "Has any animal been treated for jaundice?", "actualOutput": "Yes\u2014there are several recent messages that record treatment for jaundice:\n\n| Sender | Message snippet | Date |\n|--------|-----------------|------|\n| **Dr. Faraz** | *\u201cTreated Oreo (Rabbit) \u2014 Jaundice. IV fluids given.\u201d* | 9:44\u202fPM,\u202f4/4/2026 |\n| **Dr. Sarah Jenkins** | *\u201cFollow\u2011up for Luna (Cat): Jaundice is resolving.\u201d* | 9:33\u202fPM,\u202f3/29/2026 |\n| **Dr. Faraz** | *\u201cExamined the Golden Retriever. Confirmed Jaundice. Starting deworming.\u201d* | 9:14\u202fAM,\u202f5/6/2026 |\n\nThese messages confirm that animals have indeed been treated for jaundice.", "expectedOutput": "SELECT * FROM raw_messages WHERE text LIKE '%Jaundice%' AND chat_name LIKE 'TEST_%'", "success": false, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Row count mismatch \u2014 gold: 97, agent: 10", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": true, "score": 1.0, "reason": "No hallucination detected", "strictMode": false}], "runDuration": 0.08543198800180107, "order": 5, "metadata": {"agent_sql": "SELECT sender, text, timestamp FROM raw_messages WHERE text LIKE '%jaundice%' AND chat_name LIKE 'TEST_%' ORDER BY timestamp DESC LIMIT 10;", "case_id": "S1", "difficulty": "medium", "tags": ["synonym", "diagnosis"], "error": null}}, {"name": "S2", "input": "Did anyone treat a German Shepherd named Rocky?", "actualOutput": "Yes \u2013 several staff members have treated Rocky the German\u202fShepherd.  \nHere are a few key messages from the group chat:\n\n| Sender | Date & Time | Message snippet |\n|--------|-------------|-----------------|\n| **Dr.\u202fFaraz** | 1:25\u202fAM\u202f3/28/2026 | \u201cRocky (Dog (German Shepherd)) diagnosed with Kennel\u202fCough. Prescribed Ranitidine.\u201d |\n| **Nurse\u202fAli** | 10:18\u202fPM\u202f3/30/2026 | \u201cEmergency case: Rocky (Dog (German Shepherd)) \u2014 Parvo. Stabilized with Doxycycline.\u201d |\n| **Admin Desk** | 11:33\u202fAM\u202f4/3/2026 | \u201cAdministered Meloxicam to Rocky (Dog (German Shepherd)). Dosage: 1 tab(s).\u201d |\n| **Receptionist\u202fSara** | 6:42\u202fPM\u202f4/4/2026 | \u201cRocky (Dog (German Shepherd)) discharged. Owner: Fatima\u202fAli. Status: Needs monitoring.\u201d |\n| **Dr.\u202fSarah\u202fJenkins** | 11:26\u202fAM\u202f4/15/2026 | \u201cBlood work done for Rocky (Dog (German Shepherd)). Report: low RBC count.\u201d |\n\nThese entries confirm that Rocky has received diagnosis, medication, emergency care, and follow\u2011up from multiple clinic staff.", "expectedOutput": "SELECT * FROM raw_messages WHERE (text LIKE '%Rocky%' OR text LIKE '%German Shepherd%' OR text LIKE '%GSD%') AND chat_name LIKE 'TEST_%'", "success": false, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Row count mismatch \u2014 gold: 147, agent: 47", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Hallucination \u2014 data exists but agent said nothing found", "strictMode": false}], "runDuration": 0.09087196299878997, "order": 6, "metadata": {"agent_sql": "SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Rocky%' AND text LIKE '%German Shepherd%';", "case_id": "S2", "difficulty": "medium", "tags": ["synonym", "animal"], "error": null}}, {"name": "S3", "input": "Which doctor treated the Golden Retriever?", "actualOutput": "The Golden Retriever was treated by **Dr. Sarah\u202fJenkins** and **Dr. Faraz**.", "expectedOutput": "SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%Golden Retriever%' AND chat_name LIKE 'TEST_%'", "success": false, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Row count mismatch \u2014 gold: 7, agent: 6", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": true, "score": 1.0, "reason": "No hallucination detected", "strictMode": false}], "runDuration": 0.08355479100282537, "order": 7, "metadata": {"agent_sql": "SELECT sender, text, timestamp FROM raw_messages WHERE text LIKE '%Golden Retriever%' AND text LIKE '%treated%' AND chat_name LIKE 'TEST_%' ORDER BY timestamp DESC LIMIT 10;", "case_id": "S3", "difficulty": "medium", "tags": ["synonym", "doctor"], "error": null}}, {"name": "S4", "input": "Was any surgery done on a Labrador?", "actualOutput": "Yes \u2013 there were scheduled surgeries for Labradors. Here are the relevant messages:\n\n| Sender | Text snippet | Date |\n|--------|--------------|------|\n| Nurse Sara | \u201cJohn\u202fSmith dropped off **Bailey (Dog (Labrador))** for scheduled Surgery.\u201d | 8:36\u202fPM,\u202f3/31/2026 |\n| Nurse Sara | \u201cJohn\u202fSmith dropped off **Charlie (Dog (Labrador))** for scheduled Surgery.\u201d | 6:29\u202fPM,\u202f4/28/2026 |\n| Nurse Sara | \u201cZainab\u202fNoor dropped off **Bailey (Dog (Labrador))** for scheduled Surgery.\u201d | 6:01\u202fPM,\u202f5/28/2026 |\n\nThese messages confirm that surgeries were planned for Labradors on those dates.", "expectedOutput": "SELECT * FROM raw_messages WHERE (text LIKE '%Labrador%' OR text LIKE '%Lab%') AND text LIKE '%Surgery%' AND chat_name LIKE 'TEST_%'", "success": false, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": true, "score": 1.0, "reason": "Correct \u2014 both returned 3 rows", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Hallucination \u2014 data exists but agent said nothing found", "strictMode": false}], "runDuration": 0.10571261500081164, "order": 8, "metadata": {"agent_sql": "SELECT id, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Labrador%' AND text LIKE '%surgery%' AND chat_name LIKE 'TEST_%';", "case_id": "S4", "difficulty": "medium", "tags": ["synonym", "surgery"], "error": null}}, {"name": "T1", "input": "How many patients were discharged after kidney disease treatment?", "actualOutput": "There were **3** patients discharged after kidney disease treatment.", "expectedOutput": "SELECT * FROM raw_messages WHERE text LIKE '%Kidney Disease%' AND text LIKE '%discharged%' AND chat_name LIKE 'TEST_%'", "success": false, "metricsData": [{"name": "Base Metric", "threshold": 1.0, "success": false, "score": 0.0, "reason": "Row count mismatch \u2014 gold: 3, agent: 1", "strictMode": false}, {"name": "Base Metric", "threshold": 1.0, "success": true, "score": 1.0, "reason": "No hallucination detected", "strictMode": false}], "runDuration": 0.08345722800004296, "order": 9, "metadata": {"agent_sql": "SELECT COUNT(*) AS discharge_count FROM raw_messages WHERE text LIKE '%discharged%' AND text LIKE '%kidney%'", "case_id": "T1", "difficulty": "medium", "tags": ["temporal", "discharge"], "error": null}}], "conversationalTestCases": [], "metricsScores": [{"metric": "Base Metric", "scores": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0], "passes": 8, "fails": 12, "errors": 0}], "testPassed": 2, "testFailed": 8, "runDuration": 308.46380886100087, "official": false}
+{
+  "testFile": "tests/test_agent.py",
+  "testCases": [
+    {
+      "name": "D1",
+      "input": "Did Dr. Faraz treat a dog named Max?",
+      "actualOutput": "Yes \u2013 Dr.\u202fFaraz has treated Max on several occasions. Here are a few excerpts:\n\n| Date & Time | Chat | Sender | Message |\n|-------------|------|--------|---------|\n| 3\u202fPM,\u202f3/28/2026 | TEST_Vetlog Clinical Group | Dr.\u202fFaraz | \u201cMax\u2019s Kidney function came back: positive for parasites. Treatment started.\u201d |\n| 8\u202fAM,\u202f4/3/2026 | TEST_Vetlog Clinical Group | Dr.\u202fFaraz | \u201cFollow\u2011up for Max: Much better.\u201d |\n| 6\u202fPM,\u202f4/7/2026 | TEST_Vetlog Clinical Group | Dr.\u202fFaraz | \u201cMax discharged. Recovering well.\u201d |\n\nThese messages confirm that Dr.\u202fFaraz has indeed treated the dog named Max.",
+      "expectedOutput": "SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'",
+      "success": true,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": true,
+          "score": 1.0,
+          "reason": "Correct \u2014 both returned 21 rows",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": true,
+          "score": 1.0,
+          "reason": "No hallucination detected",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.018422274999466026,
+      "order": 0,
+      "metadata": {
+        "agent_sql": "SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'",
+        "case_id": "D1",
+        "difficulty": "easy",
+        "tags": ["direct", "treatment"],
+        "error": null
+      }
+    },
+    {
+      "name": "D2",
+      "input": "What did Nurse Ali administer to Coco?",
+      "actualOutput": "Here\u2019s what Nurse\u202fAli recorded as having given Coco:\n\n| Date & Time | Medication & Dose | Note |\n|-------------|-------------------|------|\n| 5\u202fPM,\u202f4/17/2026 | **Carprofen** \u2013 1 tablet | \u201cAdministered Carprofen to Coco.\u201d |\n| 8:23\u202fAM,\u202f4/18/2026 | **Carprofen** \u2013 7\u202fml | \u201cAdministered Carprofen to Coco (Parrot).\u201d |\n| 9:26\u202fPM,\u202f4/21/2026 | **Omeprazole** \u2013 3 tablets | \u201cAdministered Omeprazole to Coco.\u201d |\n| 8:59\u202fPM,\u202f5/18/2026 | **Praziquantel** \u2013 3 tablets | \u201cAdministered Praziquantel to Coco.\u201d |\n| 5:00\u202fPM,\u202f6/20/2026 | **Flea treatment** \u2013 dosage not specified | \u201cFlea treatment administered.\u201d |\n\nThese are the only entries in the chat where Nurse\u202fAli explicitly logged administering medication to Coco.",
+      "expectedOutput": "SELECT * FROM raw_messages WHERE sender LIKE '%Nurse Ali%' AND text LIKE '%Coco%' AND chat_name LIKE 'TEST_%'",
+      "success": false,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Row count mismatch \u2014 gold: 25, agent: 0",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Hallucination \u2014 data exists but agent said nothing found",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.053839901000173995,
+      "order": 1,
+      "metadata": {
+        "agent_sql": "SELECT id, sender, text, timestamp FROM raw_messages WHERE chat_name LIKE 'TEST_%' AND text LIKE '%Nurse Ali%' AND text LIKE '%Coco%'",
+        "case_id": "D2",
+        "difficulty": "easy",
+        "tags": ["direct", "medication"],
+        "error": null
+      }
+    },
+    {
+      "name": "D3",
+      "input": "Was there a donation from Paws Welfare Trust?",
+      "actualOutput": "Yes\u2014there have been several donations from Paws\u202fWelfare\u202fTrust. For example, Dr.\u202fFaraz noted a PKR\u202f2,000 contribution for medicine supply, and the Receptionist recorded a PKR\u202f5,000 donation on 6/4/2026. There are also multiple fund\u2011drive updates listing PKR\u202f5,000\u2013PKR\u202f25,000 gifts from the trust.",
+      "expectedOutput": "SELECT * FROM raw_messages WHERE text LIKE '%Paws Welfare Trust%' AND chat_name LIKE 'TEST_%'",
+      "success": false,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Row count mismatch \u2014 gold: 39, agent: 10",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Hallucination \u2014 data exists but agent said nothing found",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.0759454500002903,
+      "order": 2,
+      "metadata": {
+        "agent_sql": "SELECT id, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Paws Welfare Trust%' AND chat_name LIKE 'TEST_%' ORDER BY timestamp DESC LIMIT 10;",
+        "case_id": "D3",
+        "difficulty": "easy",
+        "tags": ["direct", "donation"],
+        "error": null
+      }
+    },
+    {
+      "name": "D4",
+      "input": "Which animals were checked in by Receptionist Sara?",
+      "actualOutput": "Receptionist\u202fSara has checked in the following animals (plus 43 more that aren\u2019t shown here):\n\n- Zeus  \n- Buddy  \n- Mrs.\u202fMiller\u2019s dog  \n- Cooper  \n- Charlie  \n- Nala  \n- Chloe  \n- the Labrador with the limp  \n- the Golden Retriever  \n- Shadow  \n\n(There are 43 additional check\u2011ins in the database.)",
+      "expectedOutput": "SELECT * FROM raw_messages WHERE sender LIKE '%Receptionist Sara%' AND text LIKE '%checked in%' AND chat_name LIKE 'TEST_%'",
+      "success": true,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": true,
+          "score": 1.0,
+          "reason": "Correct \u2014 both returned 53 rows",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": true,
+          "score": 1.0,
+          "reason": "No hallucination detected",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.07553372000256786,
+      "order": 3,
+      "metadata": {
+        "agent_sql": "SELECT sender, text, timestamp FROM raw_messages WHERE sender LIKE '%Receptionist Sara%' AND (text LIKE '%checked in%' OR text LIKE '%check in%') AND chat_name LIKE 'TEST_%';",
+        "case_id": "D4",
+        "difficulty": "easy",
+        "tags": ["direct", "checkin"],
+        "error": null
+      }
+    },
+    {
+      "name": "D5",
+      "input": "Who was on duty at 10:00 AM?",
+      "actualOutput": "At 10:00\u202fAM the clinic had two doctors on duty:\n\n| Sender | Message snippet | Timestamp |\n|--------|-----------------|-----------|\n| **Dr. Faraz** | \u201cDr. Faraz on duty 10:00\u202fAM. Cases: 6.\u201d | 1:47\u202fPM,\u202f4/27/2026 |\n| **Dr. Sarah\u202fJenkins** | \u201cDr. Sarah\u202fJenkins on duty 10:00\u202fAM. Cases: 10.\u201d | 2:56\u202fAM,\u202f4/4/2026 |\n\nThe Admin Desk also noted \u201cDr. Faraz on duty 10:00\u202fAM\u201d in a separate reminder, but the two doctors listed above are the ones explicitly scheduled for that time.",
+      "expectedOutput": "SELECT * FROM raw_messages WHERE text LIKE '%on duty%10:00 AM%' AND chat_name LIKE 'TEST_%'",
+      "success": false,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Row count mismatch \u2014 gold: 7, agent: 20",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Hallucination \u2014 data exists but agent said nothing found",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.08152256599714747,
+      "order": 4,
+      "metadata": {
+        "agent_sql": "SELECT id, sender, text, timestamp FROM raw_messages WHERE text LIKE '%10:00%' AND chat_name LIKE 'TEST_%' ORDER BY timestamp LIMIT 20;",
+        "case_id": "D5",
+        "difficulty": "easy",
+        "tags": ["direct", "attendance"],
+        "error": null
+      }
+    },
+    {
+      "name": "S1",
+      "input": "Has any animal been treated for jaundice?",
+      "actualOutput": "Yes\u2014there are several recent messages that record treatment for jaundice:\n\n| Sender | Message snippet | Date |\n|--------|-----------------|------|\n| **Dr. Faraz** | *\u201cTreated Oreo (Rabbit) \u2014 Jaundice. IV fluids given.\u201d* | 9:44\u202fPM,\u202f4/4/2026 |\n| **Dr. Sarah Jenkins** | *\u201cFollow\u2011up for Luna (Cat): Jaundice is resolving.\u201d* | 9:33\u202fPM,\u202f3/29/2026 |\n| **Dr. Faraz** | *\u201cExamined the Golden Retriever. Confirmed Jaundice. Starting deworming.\u201d* | 9:14\u202fAM,\u202f5/6/2026 |\n\nThese messages confirm that animals have indeed been treated for jaundice.",
+      "expectedOutput": "SELECT * FROM raw_messages WHERE text LIKE '%Jaundice%' AND chat_name LIKE 'TEST_%'",
+      "success": false,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Row count mismatch \u2014 gold: 97, agent: 10",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": true,
+          "score": 1.0,
+          "reason": "No hallucination detected",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.08543198800180107,
+      "order": 5,
+      "metadata": {
+        "agent_sql": "SELECT sender, text, timestamp FROM raw_messages WHERE text LIKE '%jaundice%' AND chat_name LIKE 'TEST_%' ORDER BY timestamp DESC LIMIT 10;",
+        "case_id": "S1",
+        "difficulty": "medium",
+        "tags": ["synonym", "diagnosis"],
+        "error": null
+      }
+    },
+    {
+      "name": "S2",
+      "input": "Did anyone treat a German Shepherd named Rocky?",
+      "actualOutput": "Yes \u2013 several staff members have treated Rocky the German\u202fShepherd.  \nHere are a few key messages from the group chat:\n\n| Sender | Date & Time | Message snippet |\n|--------|-------------|-----------------|\n| **Dr.\u202fFaraz** | 1:25\u202fAM\u202f3/28/2026 | \u201cRocky (Dog (German Shepherd)) diagnosed with Kennel\u202fCough. Prescribed Ranitidine.\u201d |\n| **Nurse\u202fAli** | 10:18\u202fPM\u202f3/30/2026 | \u201cEmergency case: Rocky (Dog (German Shepherd)) \u2014 Parvo. Stabilized with Doxycycline.\u201d |\n| **Admin Desk** | 11:33\u202fAM\u202f4/3/2026 | \u201cAdministered Meloxicam to Rocky (Dog (German Shepherd)). Dosage: 1 tab(s).\u201d |\n| **Receptionist\u202fSara** | 6:42\u202fPM\u202f4/4/2026 | \u201cRocky (Dog (German Shepherd)) discharged. Owner: Fatima\u202fAli. Status: Needs monitoring.\u201d |\n| **Dr.\u202fSarah\u202fJenkins** | 11:26\u202fAM\u202f4/15/2026 | \u201cBlood work done for Rocky (Dog (German Shepherd)). Report: low RBC count.\u201d |\n\nThese entries confirm that Rocky has received diagnosis, medication, emergency care, and follow\u2011up from multiple clinic staff.",
+      "expectedOutput": "SELECT * FROM raw_messages WHERE (text LIKE '%Rocky%' OR text LIKE '%German Shepherd%' OR text LIKE '%GSD%') AND chat_name LIKE 'TEST_%'",
+      "success": false,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Row count mismatch \u2014 gold: 147, agent: 47",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Hallucination \u2014 data exists but agent said nothing found",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.09087196299878997,
+      "order": 6,
+      "metadata": {
+        "agent_sql": "SELECT id, chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Rocky%' AND text LIKE '%German Shepherd%';",
+        "case_id": "S2",
+        "difficulty": "medium",
+        "tags": ["synonym", "animal"],
+        "error": null
+      }
+    },
+    {
+      "name": "S3",
+      "input": "Which doctor treated the Golden Retriever?",
+      "actualOutput": "The Golden Retriever was treated by **Dr. Sarah\u202fJenkins** and **Dr. Faraz**.",
+      "expectedOutput": "SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%Golden Retriever%' AND chat_name LIKE 'TEST_%'",
+      "success": false,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Row count mismatch \u2014 gold: 7, agent: 6",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": true,
+          "score": 1.0,
+          "reason": "No hallucination detected",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.08355479100282537,
+      "order": 7,
+      "metadata": {
+        "agent_sql": "SELECT sender, text, timestamp FROM raw_messages WHERE text LIKE '%Golden Retriever%' AND text LIKE '%treated%' AND chat_name LIKE 'TEST_%' ORDER BY timestamp DESC LIMIT 10;",
+        "case_id": "S3",
+        "difficulty": "medium",
+        "tags": ["synonym", "doctor"],
+        "error": null
+      }
+    },
+    {
+      "name": "S4",
+      "input": "Was any surgery done on a Labrador?",
+      "actualOutput": "Yes \u2013 there were scheduled surgeries for Labradors. Here are the relevant messages:\n\n| Sender | Text snippet | Date |\n|--------|--------------|------|\n| Nurse Sara | \u201cJohn\u202fSmith dropped off **Bailey (Dog (Labrador))** for scheduled Surgery.\u201d | 8:36\u202fPM,\u202f3/31/2026 |\n| Nurse Sara | \u201cJohn\u202fSmith dropped off **Charlie (Dog (Labrador))** for scheduled Surgery.\u201d | 6:29\u202fPM,\u202f4/28/2026 |\n| Nurse Sara | \u201cZainab\u202fNoor dropped off **Bailey (Dog (Labrador))** for scheduled Surgery.\u201d | 6:01\u202fPM,\u202f5/28/2026 |\n\nThese messages confirm that surgeries were planned for Labradors on those dates.",
+      "expectedOutput": "SELECT * FROM raw_messages WHERE (text LIKE '%Labrador%' OR text LIKE '%Lab%') AND text LIKE '%Surgery%' AND chat_name LIKE 'TEST_%'",
+      "success": false,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": true,
+          "score": 1.0,
+          "reason": "Correct \u2014 both returned 3 rows",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Hallucination \u2014 data exists but agent said nothing found",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.10571261500081164,
+      "order": 8,
+      "metadata": {
+        "agent_sql": "SELECT id, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Labrador%' AND text LIKE '%surgery%' AND chat_name LIKE 'TEST_%';",
+        "case_id": "S4",
+        "difficulty": "medium",
+        "tags": ["synonym", "surgery"],
+        "error": null
+      }
+    },
+    {
+      "name": "T1",
+      "input": "How many patients were discharged after kidney disease treatment?",
+      "actualOutput": "There were **3** patients discharged after kidney disease treatment.",
+      "expectedOutput": "SELECT * FROM raw_messages WHERE text LIKE '%Kidney Disease%' AND text LIKE '%discharged%' AND chat_name LIKE 'TEST_%'",
+      "success": false,
+      "metricsData": [
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": false,
+          "score": 0.0,
+          "reason": "Row count mismatch \u2014 gold: 3, agent: 1",
+          "strictMode": false
+        },
+        {
+          "name": "Base Metric",
+          "threshold": 1.0,
+          "success": true,
+          "score": 1.0,
+          "reason": "No hallucination detected",
+          "strictMode": false
+        }
+      ],
+      "runDuration": 0.08345722800004296,
+      "order": 9,
+      "metadata": {
+        "agent_sql": "SELECT COUNT(*) AS discharge_count FROM raw_messages WHERE text LIKE '%discharged%' AND text LIKE '%kidney%'",
+        "case_id": "T1",
+        "difficulty": "medium",
+        "tags": ["temporal", "discharge"],
+        "error": null
+      }
+    }
+  ],
+  "conversationalTestCases": [],
+  "metricsScores": [
+    {
+      "metric": "Base Metric",
+      "scores": [
+        1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+        0.0, 1.0, 1.0, 0.0, 0.0, 1.0
+      ],
+      "passes": 8,
+      "fails": 12,
+      "errors": 0
+    }
+  ],
+  "testPassed": 2,
+  "testFailed": 8,
+  "runDuration": 308.46380886100087,
+  "official": false
+}
