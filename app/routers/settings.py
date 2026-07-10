@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.crypto import decrypt_api_key, encrypt_api_key
 from app.database import UserSetting, get_session
 from app.routers.auth import get_current_user
 from app.schemas import ProviderModelInfo, UserSettingsResponse, UserSettingsUpdate
@@ -115,10 +116,11 @@ def get_settings(
             api_key_masked="",
         )
 
+    plain_key = decrypt_api_key(settings.api_key)
     return UserSettingsResponse(
         provider=settings.provider,
         model=settings.model,
-        api_key_masked=_mask_api_key(settings.api_key),
+        api_key_masked=_mask_api_key(plain_key),
     )
 
 
@@ -139,7 +141,7 @@ def update_settings(
             user_id=user.id,
             provider=payload.provider,
             model=payload.model,
-            api_key=payload.api_key,
+            api_key=encrypt_api_key(payload.api_key),
         )
         db.add(new_settings)
         db.commit()
@@ -147,18 +149,18 @@ def update_settings(
         return UserSettingsResponse(
             provider=new_settings.provider,
             model=new_settings.model,
-            api_key_masked=_mask_api_key(new_settings.api_key),
+            api_key_masked=_mask_api_key(payload.api_key),
         )
 
     settings.provider = payload.provider
     settings.model = payload.model
-    settings.api_key = payload.api_key
+    settings.api_key = encrypt_api_key(payload.api_key)
     db.commit()
     db.refresh(settings)
     return UserSettingsResponse(
         provider=settings.provider,
         model=settings.model,
-        api_key_masked=_mask_api_key(settings.api_key),
+        api_key_masked=_mask_api_key(payload.api_key),
     )
 
 
