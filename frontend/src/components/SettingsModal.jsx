@@ -1,77 +1,142 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, RefreshCw } from "lucide-react";
 import "./SettingsModal.css";
 
-const PROVIDERS = [
-  { id: "ollama", label: "Ollama (Local / Cloud)" },
-  { id: "gemini", label: "Google Gemini" },
-  { id: "openai", label: "OpenAI" },
-  { id: "groq", label: "Groq" },
-  { id: "mistral", label: "Mistral" },
-  { id: "cerebras", label: "Cerebras" },
-  { id: "openrouter", label: "OpenRouter" },
-];
+function authHeader(user) {
+  if (!user || !user.token) return {};
+  return { Authorization: "Bearer " + user.token };
+}
 
-export default function SettingsModal({ isOpen, onClose }) {
-  const [provider, setProvider] = useState("ollama");
-  const [model, setModel] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+function maskKey(key) {
+  if (!key || key.length <= 8) return "****";
+  return key.slice(0, 4) + "****" + key.slice(-4);
+}
 
-  // Fetch current config when the modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setIsLoading(true);
-      fetch("/api/config/llm")
-        .then((res) => res.json())
-        .then((data) => {
-          setProvider(data.provider || "ollama");
-          setModel(data.model || "");
-          setApiKey(""); // Don't fetch/show the actual API key for security
-          setError(null);
-        })
-        .catch((err) => {
-          console.error("Failed to load LLM config:", err);
-          setError("Failed to load settings.");
-        })
-        .finally(() => setIsLoading(false));
-    }
+export default function SettingsModal({ isOpen, onClose, user }) {
+  var [providers, setProviders] = useState([]);
+  var [provider, setProvider] = useState("ollama");
+  var [models, setModels] = useState([]);
+  var [model, setModel] = useState("");
+  var [apiKey, setApiKey] = useState("");
+  var [savedKeyHint, setSavedKeyHint] = useState("");
+
+  var [isLoading, setIsLoading] = useState(false);
+  var [isFetchingModels, setIsFetchingModels] = useState(false);
+  var [isSaving, setIsSaving] = useState(false);
+  var [error, setError] = useState(null);
+  var [modelError, setModelError] = useState(null);
+
+  var headers = authHeader(user);
+
+  function fetchProviders() {
+    return fetch("/api/user/config/providers")
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        setProviders(data.providers || []);
+      })
+      .catch(function () {
+        setError("Failed to load providers list.");
+      });
+  }
+
+  function fetchSettings() {
+    return fetch("/api/user/settings", { headers: headers })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        setProvider(data.provider || "ollama");
+        setModel(data.model || "");
+        setSavedKeyHint(data.api_key_masked || "");
+      })
+      .catch(function () {
+        // fallback — user has no saved settings, use defaults
+      });
+  }
+
+  function fetchModelsForProvider(prov) {
+    if (!prov) return;
+    setIsFetchingModels(true);
+    setModelError(null);
+
+    var url = "/api/user/models?provider=" + encodeURIComponent(prov);
+    fetch(url, { headers: headers })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var fetched = data.models || [];
+        setModels(fetched);
+        if (fetched.length === 0) {
+          setModelError("No models returned. You can type one manually.");
+        }
+      })
+      .catch(function () {
+        setModels([]);
+        setModelError("Could not fetch models. Type one manually.");
+      })
+      .finally(function () {
+        setIsFetchingModels(false);
+      });
+  }
+
+  useEffect(function () {
+    if (!isOpen) return;
+    setIsLoading(true);
+    setError(null);
+
+    Promise.all([fetchProviders(), fetchSettings()])
+      .catch(function () { })
+      .finally(function () {
+        setIsLoading(false);
+      });
   }, [isOpen]);
 
-  const handleSave = async (e) => {
+  // When provider changes, fetch models for it
+  useEffect(function () {
+    if (!isOpen || !provider || isLoading) return;
+    fetchModelsForProvider(provider);
+  }, [provider, isOpen]);
+
+  function handleSave(e) {
     e.preventDefault();
     setIsSaving(true);
     setError(null);
 
-    try {
-      const res = await fetch("/api/config/llm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, model, api_key: apiKey }),
+    var body = { provider: provider, model: model, api_key: apiKey };
+    fetch("/api/user/settings", {
+      method: "PUT",
+      headers: Object.assign({ "Content-Type": "application/json" }, headers),
+      body: JSON.stringify(body),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error("Server returned " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        setSavedKeyHint(data.api_key_masked || "");
+        setApiKey("");
+        onClose();
+      })
+      .catch(function (err) {
+        setError("Failed to save settings.");
+        console.error(err);
+      })
+      .finally(function () {
+        setIsSaving(false);
       });
+  }
 
-      if (!res.ok) {
-        throw new Error(`Server returned ${res.status}`);
-      }
-
-      onClose(); // close on success
-    } catch (err) {
-      console.error("Failed to save config:", err);
-      setError("Failed to save settings. Check console for details.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // Build model dropdown options
+  var modelOptions = [];
+  if (model && models.indexOf(model) === -1) {
+    modelOptions.push({ value: model, label: model + " (current)" });
+  }
+  for (var i = 0; i < models.length; i++) {
+    modelOptions.push({ value: models[i], label: models[i] });
+  }
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             className="modal-backdrop"
             initial={{ opacity: 0 }}
@@ -79,8 +144,7 @@ export default function SettingsModal({ isOpen, onClose }) {
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          
-          {/* Modal Content */}
+
           <div className="modal-wrapper">
             <motion.div
               className="settings-modal"
@@ -94,8 +158,8 @@ export default function SettingsModal({ isOpen, onClose }) {
             >
               <div className="modal-header">
                 <h2 id="settings-title" className="modal-title">Settings</h2>
-                <button 
-                  className="modal-close-btn" 
+                <button
+                  className="modal-close-btn"
                   onClick={onClose}
                   aria-label="Close settings"
                 >
@@ -108,34 +172,80 @@ export default function SettingsModal({ isOpen, onClose }) {
               ) : (
                 <form className="modal-body" onSubmit={handleSave}>
                   {error && <div className="modal-error">{error}</div>}
-                  
+
                   <div className="form-group">
                     <label htmlFor="provider">LLM Provider</label>
                     <select
                       id="provider"
                       value={provider}
-                      onChange={(e) => setProvider(e.target.value)}
+                      onChange={function (e) {
+                        setProvider(e.target.value);
+                        setModel("");
+                        setModels([]);
+                      }}
                       className="form-input"
                     >
-                      {PROVIDERS.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.label}
-                        </option>
-                      ))}
+                      {providers.length === 0 && (
+                        <option value="ollama">Ollama</option>
+                      )}
+                      {providers.map(function (p) {
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
                   <div className="form-group">
                     <label htmlFor="model">Model Name</label>
-                    <input
-                      type="text"
-                      id="model"
-                      value={model}
-                      onChange={(e) => setModel(e.target.value)}
-                      className="form-input"
-                      placeholder="e.g. gpt-4o or gemini-2.5-flash-lite"
-                      required
-                    />
+                    <div className="model-input-row">
+                      {isFetchingModels ? (
+                        <div className="form-input" style={{ opacity: 0.5 }}>
+                          Loading models...
+                        </div>
+                      ) : models.length > 0 ? (
+                        <select
+                          id="model"
+                          value={model}
+                          onChange={function (e) { setModel(e.target.value); }}
+                          className="form-input"
+                          required
+                        >
+                          {model === "" && (
+                            <option value="">-- Select a model --</option>
+                          )}
+                          {modelOptions.map(function (opt) {
+                            return (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          id="model"
+                          value={model}
+                          onChange={function (e) { setModel(e.target.value); }}
+                          className="form-input"
+                          placeholder="e.g. gpt-oss:20b-cloud"
+                          required
+                        />
+                      )}
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        onClick={function () { fetchModelsForProvider(provider); }}
+                        title="Refresh models list"
+                        disabled={isFetchingModels}
+                      >
+                        <RefreshCw size={16} strokeWidth={2.5} className={isFetchingModels ? "spin" : ""} />
+                      </button>
+                    </div>
+                    {modelError && <p className="form-hint form-hint--warn">{modelError}</p>}
                   </div>
 
                   <div className="form-group">
@@ -144,26 +254,28 @@ export default function SettingsModal({ isOpen, onClose }) {
                       type="password"
                       id="apikey"
                       value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
+                      onChange={function (e) { setApiKey(e.target.value); }}
                       className="form-input"
-                      placeholder="Leave blank to keep existing key"
+                      placeholder={savedKeyHint || "Enter your API key"}
                     />
-                    <p className="form-hint">
-                      Required if switching providers or setting up for the first time.
-                    </p>
+                    {savedKeyHint && (
+                      <p className="form-hint">
+                        Current key: {savedKeyHint}. Leave blank to keep it.
+                      </p>
+                    )}
                   </div>
 
                   <div className="modal-footer">
-                    <button 
-                      type="button" 
-                      className="btn-secondary" 
+                    <button
+                      type="button"
+                      className="btn-secondary"
                       onClick={onClose}
                     >
                       Cancel
                     </button>
-                    <button 
-                      type="submit" 
-                      className="btn-primary" 
+                    <button
+                      type="submit"
+                      className="btn-primary"
                       disabled={isSaving}
                     >
                       {isSaving ? "Saving..." : "Save Changes"}

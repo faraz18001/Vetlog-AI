@@ -377,7 +377,10 @@ from app.database import get_session
 
 def _get_agent_for_user(user_id: int | None, db: Session):
     if user_id is None:
-        return get_current_agent()
+        raise HTTPException(
+            status_code=400,
+            detail="User ID is required.",
+        )
 
     settings = (
         db.query(UserSetting)
@@ -385,11 +388,23 @@ def _get_agent_for_user(user_id: int | None, db: Session):
         .first()
     )
     if not settings or not settings.api_key:
-        return get_current_agent()
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "No LLM settings configured. "
+                "Open Settings and set up your provider and API key first."
+            ),
+        )
 
     api_key = decrypt_api_key(settings.api_key)
     if not api_key:
-        return get_current_agent()
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "No LLM settings configured. "
+                "Open Settings and set up your provider and API key first."
+            ),
+        )
 
     return initialize_agent(
         user_config={
@@ -456,9 +471,6 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
 
 @router.post("/chat/stream/")
 async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
-    agent = _get_agent_for_user(payload.user_id, db)
-    config = {"configurable": {"thread_id": payload.thread_id}}
-
     async def event_generator():
         report_path = None
         table_path = None
@@ -466,6 +478,14 @@ async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
         total_output = 0
         trace_lines: list[str] = []  # collected for trace log
         response_text: list[str] = []
+
+        try:
+            agent = _get_agent_for_user(payload.user_id, db)
+        except HTTPException as exc:
+            yield _sse({"type": "error", "message": exc.detail})
+            return
+
+        config = {"configurable": {"thread_id": payload.thread_id}}
 
         try:
             async for event in agent.astream_events(

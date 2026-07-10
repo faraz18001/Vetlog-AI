@@ -63,6 +63,7 @@ export default function App() {
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
+        user={user}
       />
       
       <div className="app-content">
