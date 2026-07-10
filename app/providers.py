@@ -118,10 +118,10 @@ async def get_models_for_provider(provider_id: str, api_key: str = "") -> dict:
             models = await fetch_gemini_models(api_key)
         elif provider_id in ("groq", "mistral", "cerebras", "openrouter"):
             base_urls = {
-                "groq": "https://api.groq.com/openai/v1",
-                "mistral": "https://api.mistral.ai/v1",
-                "cerebras": "https://api.cerebras.ai/v1",
-                "openrouter": "https://openrouter.ai/api/v1",
+                "groq": "https://api.groq.com/openai",
+                "mistral": "https://api.mistral.ai",
+                "cerebras": "https://api.cerebras.ai",
+                "openrouter": "https://openrouter.ai/api",
             }
             base_url = base_urls.get(provider_id)
             models = await fetch_openai_compatible_models(base_url, api_key)

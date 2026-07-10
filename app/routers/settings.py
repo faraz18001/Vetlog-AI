@@ -103,5 +103,12 @@ async def list_models(
         if settings and settings.api_key:
             api_key = decrypt_api_key(settings.api_key)
 
+    if not api_key and provider != "ollama":
+        return {
+            "provider": provider,
+            "models": [],
+            "error": "API key is required for " + provider + ". Enter it and press Enter.",
+        }
+
     result = await get_models_for_provider(provider, api_key)
     return result

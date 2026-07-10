@@ -68,7 +68,7 @@ export default function SettingsModal({ isOpen, onClose, user }) {
         var fetched = data.models || [];
         setModels(fetched);
         if (fetched.length === 0) {
-          setModelError("No models returned. You can type one manually.");
+          setModelError(data.error || "No models returned. You can type one manually.");
         }
       })
       .catch(function () {
@@ -103,8 +103,9 @@ export default function SettingsModal({ isOpen, onClose, user }) {
   function handleApiKeyKeyDown(e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (apiKey) {
-        fetchModelsForProvider(provider, apiKey);
+      var val = e.target.value;
+      if (val) {
+        fetchModelsForProvider(provider, val);
       }
     }
   }
