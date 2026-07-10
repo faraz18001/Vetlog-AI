@@ -386,6 +386,7 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
             "thread_id": payload.thread_id,
         },
         "callbacks": [callback],
+        "recursion_limit": 10,
     }
     result = agent.invoke({"messages": [("user", payload.message)]}, config=config)
     messages = result["messages"]
@@ -449,6 +450,7 @@ async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
             "thread_id": payload.thread_id,
         },
         "callbacks": [callback],
+        "recursion_limit": 10,
     }
 
     async def event_generator():

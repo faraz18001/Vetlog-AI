@@ -239,6 +239,54 @@ but what if the dude asks a detailed report then we might have to give it to the
 
 
 @tool
+def get_db_schema() -> str:
+    """
+    Return the database schema and sample data to understand table
+    structure before writing queries.
+
+    Call this FIRST when you are unsure about column names, sender
+    names, or message formats. It returns:
+    - Table columns and types
+    - All distinct sender names
+    - 5 sample messages
+
+    This avoids guessing at LIKE patterns and wasting tool calls.
+    """
+    connection = sqlite3.connect(DB_PATH)
+    try:
+        cursor = connection.cursor()
+
+        # Table schema
+        cursor.execute("PRAGMA table_info(raw_messages)")
+        columns = cursor.fetchall()
+        schema = "Columns:\n"
+        for col in columns:
+            schema += f"  {col[1]} ({col[2]})\n"
+
+        # Distinct senders
+        cursor.execute(
+            "SELECT DISTINCT sender FROM raw_messages ORDER BY sender"
+        )
+        senders = [row[0] for row in cursor.fetchall()]
+        schema += f"\nSenders ({len(senders)}):\n  " + ", ".join(senders[:30])
+
+        # Sample messages
+        cursor.execute(
+            "SELECT sender, text, timestamp FROM raw_messages LIMIT 5"
+        )
+        samples = cursor.fetchall()
+        schema += "\n\nSample messages:\n"
+        for s in samples:
+            schema += f"  [{s[0]}] {s[1][:100]}  ({s[2]})\n"
+
+        return schema
+    except Exception as e:
+        return f"Error: {e}"
+    finally:
+        connection.close()
+
+
+@tool
 def execute_sql_query(query: str, limit: int = 10) -> str:
     """
     Execute a read-only SQL query against the Vetlog SQLite database.

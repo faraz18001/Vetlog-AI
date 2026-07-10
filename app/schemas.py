@@ -15,7 +15,7 @@ class RawMessageBatchIn(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: strf
+    message: str
     thread_id: str = "web-session-default"
     user_id: int | None = None
 

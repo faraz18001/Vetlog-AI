@@ -2,20 +2,22 @@ import os
 from datetime import datetime
 
 import aiosqlite
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.prebuilt import create_react_agent
 
 from app.tools import (
     execute_sql_query,
     generate_dynamic_report,
     generate_static_report,
+    get_db_schema,
     query_to_inline_table,
 )
 
 tools = [
+    get_db_schema,
     execute_sql_query,
     query_to_inline_table,
     generate_static_report,
@@ -98,16 +100,27 @@ actual donation money coming in. Filter carefully.
     text LIKE 'Funds allocated%'  (internal allocations)
 
 TOOL ROUTING — pick ONE path per request.
+⚠️  NEVER call execute_sql_query followed by query_to_inline_table for the
+same data. Pick ONE. If the user wants to see rows → query_to_inline_table
+directly. If you only need a count or aggregate → execute_sql_query only.
+
+Path 0 — Schema check (call first if unsure about column names or sender names)
+  Tool → get_db_schema
+  Returns column names, all distinct senders, and sample data.
+  Use this BEFORE writing a query if you haven't seen the schema yet in this conversation.
 
 Path 1 — Quick lookup
   Trigger: "how many", "did", "was there", "total", counts, sums, yes/no checks
   Tool → execute_sql_query
-  [CONTEXT] Result returns to your context. Cap at 10 rows. Never fetch full datasets here.
+  [CONTEXT] Result returns to your context. Cap at 10 rows.
+  Do NOT follow up with query_to_inline_table for the same data.
 
 Path 2 — View raw data
   Trigger: "show", "see", "list all", "display", "every", "all rows"
   Tool → query_to_inline_table
   [FILE] Full data saved to file. You get the path only — zero context impact.
+  Do NOT call execute_sql_query first. Go directly to query_to_inline_table.
+  Do NOT call query_to_inline_table twice with the same query.
 
 Path 3 — Standard report
   Trigger: "report" + category (daily_summary, donation_ledger, treatment_log, attendance_sheet)
@@ -122,6 +135,13 @@ Path 4 — Custom report
 Rules:
 - Never invent data. Only report what the DB returns.
 - If SQL errors, fix and retry.
+- RETRY LIMIT: If a query returns "No results found", you may try at most 2
+  alternative queries. After 2 empty results, STOP and tell the user: "I
+  couldn't find matching data. The database may not contain records for this."
+  Never run the same query twice.
+- EMPTY RESULT: If execute_sql_query returns "No results found", do NOT
+  re-run the same tool with a slightly different LIKE pattern. Instead,
+  broaden your search ONCE or give up.
 - Keep answers short. After query_to_inline_table or a report, reply in one sentence — the UI shows the data.
 - In reports with 20+ rows: group by week/condition. Never use "..." or "(continued)".
 
