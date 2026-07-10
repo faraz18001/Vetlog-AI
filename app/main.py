@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
 from app.agent import get_current_agent, init_checkpointer
-from app.routers import auth, chat, config, conversations, reports, webhook
+from app.routers import auth, chat, config, conversations, reports, settings, webhook
 
 
 @asynccontextmanager
@@ -34,6 +34,7 @@ app.include_router(chat.router)
 app.include_router(conversations.router)
 app.include_router(reports.router)
 app.include_router(webhook.router)
+app.include_router(settings.router)
 
 @app.get("/")
 def root():

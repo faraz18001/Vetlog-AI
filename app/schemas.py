@@ -101,3 +101,21 @@ class ConversationMessage(BaseModel):
     content: str
     thread_name: str
     created_at: datetime
+
+
+class UserSettingsUpdate(BaseModel):
+    provider: str
+    model: str
+    api_key: str
+
+
+class UserSettingsResponse(BaseModel):
+    provider: str
+    model: str
+    api_key_masked: str
+
+
+class ProviderModelInfo(BaseModel):
+    id: str
+    name: str
+    models: list[str]

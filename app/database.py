@@ -9,7 +9,9 @@ from sqlalchemy import (
     Text,
     create_engine,
 )
+from sqlalchemy.event import api
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.sql.expression import false
 
 from app.config import DATABASE_URL
 
@@ -63,6 +65,22 @@ class ConversationLog(Base):
     tokens_used = Column(Integer, nullable=True)
 
 
+class UserSetting(Base):
+    __tablename__ = "user_settings"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    provider = Column(String(32), nullable=False, default="ollama")
+    model = Column(String(128), nullable=False, default="")
+    api_key = Column(Text, nullable=False, default="")
+
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 
@@ -76,9 +94,3 @@ def get_session():
         raise
     finally:
         db.close()
-
-
-"""1.We will later add a table for saving users setting we can't put the model selection and api key inside the
-env
-2.we might need to grab the provided models on that specific select api so that user can easily select its model.
-3.we also need to add a database tables for keeping track of all the chat histrory on the sidebar"""
