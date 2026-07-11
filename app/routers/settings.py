@@ -110,5 +110,7 @@ async def list_models(
             "error": "API key is required for " + provider + ". Enter it and press Enter.",
         }
 
+    print(f"[DEBUG] models endpoint: provider={provider}, api_key length={len(api_key)}, api_key[:10]={api_key[:10]!r}")
+
     result = await get_models_for_provider(provider, api_key)
     return result

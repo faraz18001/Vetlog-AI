@@ -62,6 +62,7 @@ export default function SettingsModal({ isOpen, onClose, user }) {
     if (key) {
       url = url + "&api_key=" + encodeURIComponent(key);
     }
+    console.log("Fetching models:", provider, "key_length:", key ? key.length : 0);
     fetch(url, { headers: headers })
       .then(function (res) { return res.json(); })
       .then(function (data) {
@@ -101,7 +102,7 @@ export default function SettingsModal({ isOpen, onClose, user }) {
   }, [provider, isOpen]);
 
   function handleApiKeyKeyDown(e) {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" || e.key === "NumpadEnter") {
       e.preventDefault();
       var val = e.target.value;
       if (val) {
@@ -253,7 +254,7 @@ export default function SettingsModal({ isOpen, onClose, user }) {
                       <button
                         type="button"
                         className="btn-icon"
-                        onClick={function () { fetchModelsForProvider(provider); }}
+                        onClick={function () { fetchModelsForProvider(provider, apiKey || undefined); }}
                         title="Refresh models list"
                         disabled={isFetchingModels}
                       >
