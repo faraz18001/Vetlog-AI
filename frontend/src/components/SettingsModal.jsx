@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, RefreshCw } from "lucide-react";
 import "./SettingsModal.css";
@@ -20,6 +20,8 @@ export default function SettingsModal({ isOpen, onClose, user }) {
   var [model, setModel] = useState("");
   var [apiKey, setApiKey] = useState("");
   var [savedKeyHint, setSavedKeyHint] = useState("");
+  var [draftKeys, setDraftKeys] = useState({});
+  var [draftModels, setDraftModels] = useState({});
 
   var [isLoading, setIsLoading] = useState(false);
   var [isFetchingModels, setIsFetchingModels] = useState(false);
@@ -28,6 +30,7 @@ export default function SettingsModal({ isOpen, onClose, user }) {
   var [modelError, setModelError] = useState(null);
 
   var headers = authHeader(user);
+  var [configuredProviders, setConfiguredProviders] = useState([]);
 
   function fetchProviders() {
     return fetch("/api/user/config/providers")
@@ -40,13 +43,25 @@ export default function SettingsModal({ isOpen, onClose, user }) {
       });
   }
 
-  function fetchSettings() {
-    return fetch("/api/user/settings", { headers: headers })
+  function fetchSettings(prov) {
+    var url = "/api/user/settings";
+    if (prov) {
+      url = url + "?provider=" + encodeURIComponent(prov);
+    }
+    return fetch(url, { headers: headers })
       .then(function (res) { return res.json(); })
       .then(function (data) {
-        setProvider(data.provider || "ollama");
-        setModel(data.model || "");
-        setSavedKeyHint(data.api_key_masked || "");
+        var p = data.provider || "ollama";
+        var mdl = data.model || "";
+        var hint = data.api_key_masked || "";
+        setProvider(p);
+        setModel(mdl);
+        setSavedKeyHint(hint);
+        setConfiguredProviders(data.configured_providers || []);
+        // Auto-fetch models if we have a key saved or it's Ollama
+        if (p === "ollama" || hint) {
+          fetchModelsForProvider(p);
+        }
       })
       .catch(function () {
         // fallback — user has no saved settings, use defaults
@@ -81,25 +96,31 @@ export default function SettingsModal({ isOpen, onClose, user }) {
       });
   }
 
+  var initialLoadDone = useRef(false);
+
   useEffect(function () {
     if (!isOpen) return;
     setIsLoading(true);
     setError(null);
+    initialLoadDone.current = false;
 
     Promise.all([fetchProviders(), fetchSettings()])
       .catch(function () { })
       .finally(function () {
         setIsLoading(false);
+        initialLoadDone.current = true;
       });
   }, [isOpen]);
 
-  // Fetch models for Ollama immediately on provider change (needs no API key)
+  // When provider changes (after initial load), load saved settings for that provider from DB
   useEffect(function () {
-    if (!isOpen || !provider || isLoading) return;
-    if (provider === "ollama") {
-      fetchModelsForProvider(provider);
-    }
-  }, [provider, isOpen]);
+    if (!isOpen || !initialLoadDone.current) return;
+    setModels([]);
+    setModelError(null);
+    fetchSettings(provider);
+  }, [provider]);
+
+
 
   function handleApiKeyKeyDown(e) {
     if (e.key === "Enter" || e.key === "NumpadEnter") {
@@ -128,6 +149,7 @@ export default function SettingsModal({ isOpen, onClose, user }) {
       })
       .then(function (data) {
         setSavedKeyHint(data.api_key_masked || "");
+        setConfiguredProviders(data.configured_providers || []);
         setApiKey("");
         onClose();
       })
@@ -195,8 +217,23 @@ export default function SettingsModal({ isOpen, onClose, user }) {
                       id="provider"
                       value={provider}
                       onChange={function (e) {
-                        setProvider(e.target.value);
-                        setModel("");
+                        var newProv = e.target.value;
+                        var oldProv = provider;
+                        // Save drafts for the provider we're leaving
+                        if (oldProv !== newProv) {
+                          var updatedDraftKeys = {};
+                          for (var k in draftKeys) updatedDraftKeys[k] = draftKeys[k];
+                          updatedDraftKeys[oldProv] = apiKey;
+                          var updatedDraftModels = {};
+                          for (var m in draftModels) updatedDraftModels[m] = draftModels[m];
+                          updatedDraftModels[oldProv] = model;
+                          setDraftKeys(updatedDraftKeys);
+                          setDraftModels(updatedDraftModels);
+                          // Restore drafts for the provider we're switching to
+                          setApiKey(updatedDraftKeys[newProv] || "");
+                          setModel(updatedDraftModels[newProv] || "");
+                        }
+                        setProvider(newProv);
                         setModels([]);
                       }}
                       className="form-input"
@@ -205,9 +242,10 @@ export default function SettingsModal({ isOpen, onClose, user }) {
                         <option value="ollama">Ollama</option>
                       )}
                       {providers.map(function (p) {
+                        var isConfigured = configuredProviders.indexOf(p.id) !== -1;
                         return (
                           <option key={p.id} value={p.id}>
-                            {p.name}
+                            {p.name}{isConfigured ? " \u2713" : ""}
                           </option>
                         );
                       })}

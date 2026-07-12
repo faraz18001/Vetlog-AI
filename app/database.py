@@ -7,6 +7,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     create_engine,
 )
 from sqlalchemy.event import api
@@ -67,8 +68,10 @@ class ConversationLog(Base):
 
 class UserSetting(Base):
     __tablename__ = "user_settings"
+    __table_args__ = (UniqueConstraint("user_id", "provider", name="uq_user_provider"),)
+
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     provider = Column(String(32), nullable=False, default="ollama")
     model = Column(String(128), nullable=False, default="")
     api_key = Column(Text, nullable=False, default="")

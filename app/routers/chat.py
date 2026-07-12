@@ -5,7 +5,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from app.agent import get_current_agent, initialize_agent
@@ -385,6 +385,7 @@ def _get_agent_for_user(user_id: int | None, db: Session):
     settings = (
         db.query(UserSetting)
         .filter(UserSetting.user_id == user_id)
+        .order_by(desc(UserSetting.updated_at))
         .first()
     )
     if not settings or not settings.api_key:

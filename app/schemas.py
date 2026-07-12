@@ -113,6 +113,7 @@ class UserSettingsResponse(BaseModel):
     provider: str
     model: str
     api_key_masked: str
+    configured_providers: list[str] = []
 
 
 class ProviderModelInfo(BaseModel):
