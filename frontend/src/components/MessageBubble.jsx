@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Cat, Check, Copy } from "lucide-react";
+import { Cat, Check, Copy, UserRound } from "lucide-react";
 import { motion } from "framer-motion";
 import ReportCard from "./ReportCard.jsx";
 import InlineTableCard from "./InlineTableCard.jsx";
@@ -86,7 +86,7 @@ function MessageBubble({ message }) {
         aria-hidden="true"
       >
         {isUser ? (
-          "You"
+          <UserRound size={12} strokeWidth={2.5} />
         ) : (
           <Cat size={17} strokeWidth={2.25} />
         )}

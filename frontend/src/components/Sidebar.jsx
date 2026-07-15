@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { MessageCirclePlus, ClipboardList, Settings, CircleUserRound } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { MessageCirclePlus, MessageSquare, Settings, CircleUserRound, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { motion } from "framer-motion";
+import * as Popover from "@radix-ui/react-popover";
 import "./Sidebar.css";
 
-export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled, onOpenSettings, onSelectThread, userId }) {
+export default function Sidebar({ isOpen, onToggle, onNewChat, isNewChatDisabled, onOpenSettings, onSelectThread, userId, userName, onLogout }) {
   const [conversations, setConversations] = useState([]);
 
   useEffect(function () {
@@ -64,77 +65,101 @@ export default function Sidebar({ isOpen, onNewChat, isNewChatDisabled, onOpenSe
   var groupedConversations = groupByDate(conversations);
 
   return (
-    <AnimatePresence initial={false}>
-      {isOpen && (
-        <motion.aside
-          className="sidebar"
-          initial={{ width: 0 }}
-          animate={{ width: 260 }}
-          exit={{ width: 0 }}
-          transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-        >
-          <div className="sidebar-inner">
-            {/* Top Action */}
-            <div className="sidebar-header">
-              <button
-                className="sidebar-new-chat"
-                onClick={onNewChat}
-                disabled={isNewChatDisabled}
-                aria-label="Start a new chat"
-              >
-                <MessageCirclePlus size={16} strokeWidth={2} />
-                <span>New Chat</span>
-              </button>
-            </div>
+    <motion.aside
+      className={"sidebar" + (isOpen ? "" : " sidebar--collapsed")}
+      animate={{ width: isOpen ? 260 : 52 }}
+      transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+    >
+      <div className="sidebar-inner">
 
-            {/* Chat History */}
-            <div className="sidebar-history">
-              {groupedConversations.map(function (section, i) {
-                return (
-                  <div key={i} className="history-group">
-                    <h3 className="history-group-title">{section.group}</h3>
-                    <ul className="history-list">
-                      {section.chats.map(function (chat, j) {
-                        return (
-                          <li key={j}>
-                            <button
-                              className="history-item-btn"
-                              onClick={function () { onSelectThread(chat.thread_id); }}
-                            >
-                              <ClipboardList size={14} strokeWidth={2} className="history-item-icon" />
-                              <span className="history-item-text">{chat.thread_name}</span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
+        <div className="sidebar-header">
+          <button
+            className="sidebar-toggle-btn"
+            onClick={onToggle}
+            aria-label="Toggle sidebar"
+            title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {isOpen ? (
+              <PanelLeftClose size={18} strokeWidth={2} />
+            ) : (
+              <PanelLeftOpen size={18} strokeWidth={2} />
+            )}
+          </button>
 
-            {/* Bottom Profile / Settings */}
-            <div className="sidebar-footer">
-              <button
-                className="sidebar-footer-btn"
-                onClick={onOpenSettings}
-              >
-                <Settings size={16} strokeWidth={2} />
-                <span>Settings</span>
-              </button>
-              <button className="sidebar-footer-btn profile-btn">
+          <button
+            className="sidebar-new-chat"
+            onClick={onNewChat}
+            disabled={isNewChatDisabled}
+            aria-label="Start a new chat"
+            title="New Chat"
+          >
+            <MessageCirclePlus size={16} strokeWidth={2} />
+            {isOpen && <span>New Chat</span>}
+          </button>
+        </div>
+
+        {isOpen && (
+          <div className="sidebar-history">
+            {groupedConversations.map(function (section, i) {
+              return (
+                <div key={i} className="history-group">
+                  <h3 className="history-group-title">{section.group}</h3>
+                  <ul className="history-list">
+                    {section.chats.map(function (chat, j) {
+                      return (
+                        <li key={j}>
+                          <button
+                            className="history-item-btn"
+                            onClick={function () { onSelectThread(chat.thread_id); }}
+                          >
+                            <MessageSquare size={14} strokeWidth={2} className="history-item-icon" />
+                            <span className="history-item-text">{chat.thread_name}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="sidebar-footer">
+          <button
+            className="sidebar-footer-btn"
+            onClick={onOpenSettings}
+            title="Settings"
+          >
+            <Settings size={16} strokeWidth={2} />
+            {isOpen && <span>Settings</span>}
+          </button>
+
+          <Popover.Root>
+            <Popover.Trigger asChild>
+              <button className="sidebar-footer-btn profile-btn" title={userName || "User"}>
                 <div className="profile-avatar">
                   <CircleUserRound size={14} strokeWidth={2} />
                 </div>
-                <div className="profile-info">
-                  <span className="profile-name">Dr. Faraz</span>
-                  <span className="profile-role">Veterinarian</span>
-                </div>
+                {isOpen && (
+                  <div className="profile-info">
+                    <span className="profile-name">{userName || "User"}</span>
+                    <span className="profile-role">Veterinarian</span>
+                  </div>
+                )}
               </button>
-            </div>
-          </div>
-        </motion.aside>
-      )}
-    </AnimatePresence>
+            </Popover.Trigger>
+            <Popover.Portal>
+              <Popover.Content className="profile-popover" side="top" align="start" sideOffset={8}>
+                <button className="profile-popover-item" onClick={onLogout}>
+                  <LogOut size={14} strokeWidth={2} />
+                  <span>Log out</span>
+                </button>
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
+        </div>
+      </div>
+    </motion.aside>
   );
 }

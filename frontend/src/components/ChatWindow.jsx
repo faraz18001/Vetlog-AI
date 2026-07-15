@@ -13,13 +13,12 @@ const SUGGESTED = [
 function EmptyState({ onPrompt }) {
   return (
     <div className="chat-empty">
-      <div className="chat-empty-glow" aria-hidden="true" />
       <motion.div
         className="chat-empty-icon"
         aria-hidden="true"
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "spring", bounce: 0.3, duration: 0.7 }}
+        transition={{ type: "spring", bounce: 0, duration: 0.5 }}
       >
         <Cat size={32} strokeWidth={1.75} />
       </motion.div>

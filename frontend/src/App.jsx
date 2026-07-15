@@ -6,7 +6,7 @@ import InputBar from "./components/InputBar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import SettingsModal from "./components/SettingsModal.jsx";
 import LoginPage from "./components/LoginPage.jsx";
-import { Cat, PanelLeft, LogOut } from "lucide-react";
+import { Cat } from "lucide-react";
 import "./App.css";
 
 
@@ -53,11 +53,14 @@ export default function App() {
 
       <Sidebar 
         isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         onNewChat={clearChat} 
         isNewChatDisabled={messages.length === 0 && !isLoading} 
         onOpenSettings={() => setIsSettingsOpen(true)}
         onSelectThread={loadThread}
         userId={user.user_id}
+        userName={user.display_name}
+        onLogout={logout}
       />
       
       <SettingsModal 
@@ -70,14 +73,7 @@ export default function App() {
         {/* ---- Topbar ---- */}
         <header className="topbar">
           <div className="topbar-brand">
-            <button 
-              className="topbar-icon-btn" 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              aria-label="Toggle sidebar"
-            >
-              <PanelLeft size={20} strokeWidth={2.5} />
-            </button>
-            <span className="topbar-brand-mark" style={{ marginLeft: 'var(--space-2)' }}>
+            <span className="topbar-brand-mark">
               <Cat size={22} strokeWidth={2.25} />
             </span>
             <span className="topbar-wordmark">Vetlog AI</span>
@@ -94,17 +90,6 @@ export default function App() {
                 )}
               </div>
             )}
-            <span className="topbar-user" title={user.display_name}>
-              {user.display_name}
-            </span>
-            <button
-              className="topbar-icon-btn"
-              onClick={logout}
-              aria-label="Log out"
-              title="Log out"
-            >
-              <LogOut size={16} strokeWidth={2.5} />
-            </button>
           </div>
         </header>
 

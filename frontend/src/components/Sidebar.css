@@ -9,23 +9,6 @@
   position: relative;
 }
 
-/* faint warm seam down the right edge of the sidebar */
-.sidebar::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    oklch(62% 0.20 295 / 0.16) 35%,
-    oklch(62% 0.20 295 / 0.16) 65%,
-    transparent 100%
-  );
-}
-
 .sidebar-inner {
   width: 260px;
   display: flex;
@@ -33,15 +16,57 @@
   height: 100%;
 }
 
-.sidebar-header {
-  padding: var(--space-4);
+.sidebar--collapsed .sidebar-inner {
+  width: 52px;
 }
 
-/* New Chat — inviting filled accent-tinted action */
+.sidebar-header {
+  padding: var(--space-3) var(--space-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sidebar--collapsed .sidebar-header {
+  padding: var(--space-2);
+  gap: var(--space-3);
+}
+
+.sidebar-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  align-self: flex-end;
+}
+
+.sidebar--collapsed .sidebar-toggle-btn {
+  align-self: center;
+}
+
+.sidebar-toggle-btn:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.sidebar-toggle-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .sidebar-new-chat {
   width: 100%;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
   font-family: var(--font-body);
   font-size: var(--text-sm);
@@ -59,6 +84,13 @@
     border-color var(--dur-fast) var(--ease-out),
     background var(--dur-fast) var(--ease-out),
     transform var(--dur-fast) var(--ease-out);
+}
+
+.sidebar--collapsed .sidebar-new-chat {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--radius-md);
 }
 
 .sidebar-new-chat:hover:not(:disabled) {
@@ -137,7 +169,6 @@
     color var(--dur-fast) var(--ease-out);
 }
 
-/* terracotta left-accent on hover */
 .history-item-btn::before {
   content: "";
   position: absolute;
@@ -185,6 +216,11 @@
   gap: var(--space-1);
 }
 
+.sidebar--collapsed .sidebar-footer {
+  padding: var(--space-2);
+  align-items: center;
+}
+
 .sidebar-footer-btn {
   width: 100%;
   display: flex;
@@ -205,6 +241,13 @@
     color var(--dur-fast) var(--ease-out);
 }
 
+.sidebar--collapsed .sidebar-footer-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  justify-content: center;
+}
+
 .sidebar-footer-btn:hover {
   background: var(--color-surface-hover);
   color: var(--color-text);
@@ -218,6 +261,11 @@
 .profile-btn {
   margin-top: var(--space-2);
   padding: var(--space-2);
+}
+
+.sidebar--collapsed .profile-btn {
+  margin-top: var(--space-1);
+  padding: 0;
 }
 
 .profile-avatar {
@@ -251,6 +299,60 @@
 
 @media (max-width: 768px) {
   .sidebar {
-    display: none; /* Hide sidebar on mobile for now */
+    display: none;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-new-chat,
+  .history-item-btn,
+  .history-item-btn::before,
+  .sidebar-footer-btn {
+    transition: opacity 150ms var(--ease-out);
+  }
+}
+
+.profile-popover {
+  z-index: 200;
+  min-width: 140px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+  box-shadow: var(--shadow-md);
+  animation: popover-in 120ms var(--ease-out);
+}
+
+.profile-popover[data-state="closed"] {
+  animation: popover-out 100ms var(--ease-in);
+}
+
+.profile-popover-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.profile-popover-item:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+@keyframes popover-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes popover-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.96); }
 }

@@ -96,26 +96,9 @@ body {
             var(--color-surface) 0%,
             color-mix(in oklch, var(--color-surface) 60%, var(--color-paper)) 100%
         );
-    border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
     z-index: 10;
     position: relative;
-}
-
-/* faint warm wash along the topbar bottom edge */
-.topbar::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: 1px;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        oklch(62% 0.20 295 / 0.18) 50%,
-        transparent 100%
-    );
 }
 
 .topbar-brand {
@@ -185,10 +168,10 @@ body {
     gap: var(--space-2);
     font-size: var(--text-xs);
     color: var(--color-text-faint);
-    font-variant-numeric: tabular-nums;
+
     background: var(--color-surface-2);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     padding: var(--space-1) var(--space-3);
 }
 
@@ -214,25 +197,7 @@ body {
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     overflow: hidden;
-    box-shadow: var(--shadow-md);
     position: relative;
-}
-
-/* warm top accent stripe */
-.report-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(
-        90deg,
-        oklch(62% 0.20 295 / 0.0) 0%,
-        var(--color-accent) 30%,
-        var(--color-accent) 70%,
-        oklch(62% 0.20 295 / 0.0) 100%
-    );
 }
 
 .report-card-header {
@@ -417,24 +382,7 @@ body {
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     overflow: hidden;
-    box-shadow: var(--shadow-md);
     position: relative;
-}
-
-.inline-table-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(
-        90deg,
-        oklch(62% 0.20 295 / 0.0) 0%,
-        var(--color-accent) 30%,
-        var(--color-accent) 70%,
-        oklch(62% 0.20 295 / 0.0) 100%
-    );
 }
 
 .inline-table-header {
@@ -476,7 +424,7 @@ body {
     font-weight: 500;
     color: var(--color-accent);
     background: var(--color-accent-subtle);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     padding: 1px var(--space-2);
     line-height: 1.5;
     font-variant-numeric: tabular-nums;
@@ -572,7 +520,6 @@ body {
     top: 0;
     z-index: 1;
     background: var(--color-surface-2);
-    backdrop-filter: blur(4px);
 }
 
 /* Footer with download */
@@ -687,26 +634,6 @@ body {
     position: relative;
 }
 
-/* soft radial terracotta glow behind the mark */
-.chat-empty-glow {
-    position: absolute;
-    top: 38%;
-    left: 50%;
-    width: 340px;
-    height: 340px;
-    transform: translate(-50%, -50%);
-    background: var(--glow-accent);
-    filter: blur(8px);
-    pointer-events: none;
-    z-index: 0;
-    animation: glow-breathe 6s ease-in-out infinite;
-}
-
-@keyframes glow-breathe {
-    0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
-    50%      { opacity: 0.9;  transform: translate(-50%, -50%) scale(1.08); }
-}
-
 .chat-empty > * {
     position: relative;
     z-index: 1;
@@ -771,21 +698,17 @@ body {
     text-align: left;
     line-height: 1.5;
     width: 100%;
-    box-shadow: var(--shadow-sm);
     transition:
         color var(--dur-fast) var(--ease-out),
         background var(--dur-fast) var(--ease-out),
         border-color var(--dur-fast) var(--ease-out),
-        transform var(--dur-base) var(--ease-out),
-        box-shadow var(--dur-base) var(--ease-out);
+        transform var(--dur-base) var(--ease-out);
 }
 
 .chat-prompt-btn:hover {
     color: var(--color-text);
     background: var(--color-surface-hover);
     border-color: var(--color-accent);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
 }
 
 .chat-prompt-btn:focus-visible {
@@ -827,8 +750,8 @@ body {
 
 /* Avatar */
 .msg-avatar {
-    width: 30px;
-    height: 30px;
+    width: 22px;
+    height: 22px;
     border-radius: var(--radius-full);
     flex-shrink: 0;
     display: flex;
@@ -862,6 +785,7 @@ body {
     position: relative;
 }
 
+/* AI message — no bubble, just text */
 /* AI message — no bubble, just text */
 .msg-bubble--ai .msg-content {
     color: var(--color-text);
@@ -1019,10 +943,8 @@ body {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     min-width: 0;
-    box-shadow: var(--shadow-sm);
 }
 
-/* Streaming cursor */
 .msg-content--streaming::after {
     content: "▋";
     display: inline-block;
@@ -1215,7 +1137,7 @@ body {
     width: 34px;
     height: 34px;
     flex-shrink: 0;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     background: var(--color-accent);
     border: none;
     cursor: pointer;
@@ -1298,16 +1220,22 @@ body {
     .topbar-wordmark {
         font-size: var(--text-base);
     }
+    .chat-empty {
+        margin-left: 0;
+        align-items: center;
+        text-align: center;
+    }
     .chat-empty-title {
         font-size: var(--text-2xl);
-    }
-    .chat-empty-glow {
-        width: 260px;
-        height: 260px;
     }
 }
 
 @media (max-width: 375px) {
+    .chat-empty {
+        margin-left: 0;
+        align-items: center;
+        text-align: center;
+    }
     .chat-empty-title {
         font-size: var(--text-xl);
     }
@@ -1321,9 +1249,6 @@ body {
    ============================================= */
 
 @media (prefers-reduced-motion: reduce) {
-    .chat-empty-glow {
-        animation: none;
-    }
     .dot {
         animation: none;
         opacity: 0.5;
@@ -1490,7 +1415,7 @@ body {
     color: var(--color-text-faint);
     background: transparent;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     padding: 2px var(--space-2);
     cursor: pointer;
     margin: var(--space-2) 0 var(--space-1);
