@@ -72,6 +72,8 @@ def get_conversation(
                 content=log.content,
                 thread_name=log.thread_name,
                 created_at=log.created_at,
+                report_path=log.report_path,
+                table_path=log.table_path,
             )
         )
 

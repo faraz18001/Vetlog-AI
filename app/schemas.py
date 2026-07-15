@@ -101,6 +101,8 @@ class ConversationMessage(BaseModel):
     content: str
     thread_name: str
     created_at: datetime
+    report_path: str | None = None
+    table_path: str | None = None
 
 
 class UserSettingsUpdate(BaseModel):

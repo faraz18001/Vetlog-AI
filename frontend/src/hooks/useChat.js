@@ -205,6 +205,8 @@ export function useChat() {
         role: data[i].role,
         content: data[i].content,
         timestamp: new Date(data[i].created_at),
+        reportPath: data[i].report_path || null,
+        tablePath: data[i].table_path || null,
       });
     }
 

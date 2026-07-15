@@ -63,6 +63,8 @@ class ConversationLog(Base):
     tool_name = Column(String, nullable=True)
     tool_args = Column(Text, nullable=True)
     tool_output = Column(Text, nullable=True)
+    report_path = Column(String(512), nullable=True)
+    table_path = Column(String(512), nullable=True)
     tokens_used = Column(Integer, nullable=True)
 
 

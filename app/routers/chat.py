@@ -24,6 +24,8 @@ def logging_turns(
     thread_name: str,
     role: str,
     content: str,
+    report_path=None,
+    table_path=None,
 ):
     max_turn = (
         db.query(func.max(ConversationLog.turn_number))
@@ -42,6 +44,8 @@ def logging_turns(
         turn_number=next_turn,
         role=role,
         content=content,
+        report_path=report_path,
+        table_path=table_path,
     )
     db.add(log)
     db.commit()
@@ -485,6 +489,8 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
 
     if payload.user_id is not None:
         thread_name = payload.message[:80]
+        report_path = find_report_path(messages)
+        table_path = find_table_path(messages)
         turn = logging_turns(
             db,
             user_id=payload.user_id,
@@ -500,6 +506,8 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
             thread_name=thread_name,
             role="assistant",
             content=response_text,
+            report_path=report_path,
+            table_path=table_path,
         )
         if turn == 0:
             try:
@@ -515,8 +523,6 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
         messages,
         usage_dump,
     )
-    report_path = find_report_path(messages)
-    table_path = find_table_path(messages)
     steps = extract_steps(messages)
 
     return ChatResponse(
@@ -744,6 +750,8 @@ async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
                 thread_name=thread_name,
                 role="assistant",
                 content=trace_text,
+                report_path=report_path,
+                table_path=table_path,
             )
             if turn == 0:
                 try:
