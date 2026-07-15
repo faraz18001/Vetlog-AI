@@ -42,17 +42,6 @@ export default function InlineTableCard({ path }) {
     fetchTable();
   }, [filename]);
 
-  function handleDownload() {
-    if (!content) return;
-    const blob = new Blob([content], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <div className="inline-table-card">
       <div className="inline-table-header">
@@ -103,18 +92,6 @@ export default function InlineTableCard({ path }) {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="inline-table-footer">
-        <button
-          className="inline-table-download"
-          onClick={handleDownload}
-          disabled={!content}
-          title="Download as markdown"
-        >
-          <Download size={13} strokeWidth={2.25} />
-          <span>.md</span>
-        </button>
-      </div>
     </div>
   );
 }

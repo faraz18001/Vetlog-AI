@@ -1,6 +1,6 @@
 import os
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from app.tools import REPORTS_DIR
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -98,3 +98,84 @@ def export_report_html(filename: str):
     """
 
     return HTMLResponse(content=html)
+
+
+@router.get("/{filename}/pdf")
+def download_report_pdf(filename: str):
+    filepath = os.path.join(REPORTS_DIR, filename)
+
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="Report not found.")
+
+    with open(filepath, "r") as f:
+        md_content = f.read()
+
+    try:
+        import markdown as md_lib
+        body_html = md_lib.markdown(md_content, extensions=["tables", "fenced_code"])
+    except ImportError:
+        body_html = "<pre>" + md_content + "</pre>"
+
+    report_title = filename.replace("_", " ").replace(".md", "").title()
+
+    html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>""" + report_title + """</title>
+      <style>
+        body {
+          font-family: 'Segoe UI', Arial, sans-serif;
+          max-width: 820px;
+          margin: 48px auto;
+          padding: 0 24px;
+          color: #1a1a1a;
+          line-height: 1.7;
+        }
+        h1, h2, h3 { font-weight: 600; margin-top: 1.5em; }
+        h2 { font-size: 1.5rem; border-bottom: 2px solid #e5e5e5; padding-bottom: 8px; }
+        h3 { font-size: 1.15rem; }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 1.25em 0;
+          font-size: 0.9rem;
+        }
+        th {
+          background: #f4f4f5;
+          font-weight: 600;
+          text-align: left;
+          padding: 10px 14px;
+          border: 1px solid #d4d4d8;
+        }
+        td {
+          padding: 8px 14px;
+          border: 1px solid #e4e4e7;
+          vertical-align: top;
+        }
+        tr:nth-child(even) td { background: #fafafa; }
+        hr { border: none; border-top: 1px solid #e5e5e5; margin: 2em 0; }
+        em { color: #71717a; font-size: 0.875rem; }
+        code { background: #f4f4f5; padding: 2px 6px; border-radius: 4px; }
+        @page { margin: 2cm; }
+      </style>
+    </head>
+    <body>
+      """ + body_html + """
+    </body>
+    </html>
+    """
+
+    from weasyprint import HTML
+
+    pdf_bytes = HTML(string=html).write_pdf()
+
+    pdf_filename = filename.replace(".md", ".pdf")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'attachment; filename="' + pdf_filename + '"',
+        },
+    )

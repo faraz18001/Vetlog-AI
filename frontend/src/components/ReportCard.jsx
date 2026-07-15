@@ -85,20 +85,6 @@ export default function ReportCard({ reportPath }) {
     }
   }
 
-  function handleDownloadMarkdown() {
-    if (!markdownContent) return;
-
-    const blob = new Blob([markdownContent], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
-
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <div className="report-card">
       {/* Header row */}
@@ -146,20 +132,10 @@ export default function ReportCard({ reportPath }) {
         <button
           className="report-card-btn report-card-btn--primary"
           onClick={handleDownloadPdf}
-          title="Download as a PDF file directly"
+          title="Download as PDF"
         >
           <Download size={14} strokeWidth={2.5} />
           Download PDF
-        </button>
-
-        <button
-          className="report-card-btn report-card-btn--secondary"
-          onClick={handleDownloadMarkdown}
-          disabled={!markdownContent}
-          title="Download the raw markdown file"
-        >
-          <Download size={14} strokeWidth={2.5} />
-          Download .md
         </button>
       </div>
     </div>
