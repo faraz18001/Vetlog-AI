@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from app.agent import get_current_agent, initialize_agent
+from app.agent import get_current_agent, get_llm_model, initialize_agent
 from app.config import INPUT_TOKEN_PRICE_PER_1K, OUTPUT_TOKEN_PRICE_PER_1K
 from app.crypto import decrypt_api_key
 from app.database import ConversationLog, UserSetting
@@ -44,6 +44,57 @@ def logging_turns(
         content=content,
     )
     db.add(log)
+    db.commit()
+    return next_turn
+
+
+def _get_user_config(user_id, db):
+    settings = (
+        db.query(UserSetting)
+        .filter(UserSetting.user_id == user_id)
+        .order_by(desc(UserSetting.updated_at))
+        .first()
+    )
+    if not settings or not settings.api_key:
+        return None
+
+    api_key = decrypt_api_key(settings.api_key)
+    if not api_key:
+        return None
+
+    return {
+        "provider": settings.provider,
+        "model": settings.model,
+        "api_key": api_key,
+    }
+
+
+def generate_thread_title(user_msg, ai_response, user_config):
+    prompt = (
+        "Summarize this conversation in 3-5 words. "
+        "If the user just said hello, use the assistant's response to infer the topic. "
+        "Return only the title, no quotes, no extra text.\n\n"
+        "User: " + user_msg[:300] + "\n"
+        "Assistant: " + ai_response[:300] + "\n\n"
+        "Title:"
+    )
+
+    try:
+        llm = get_llm_model(user_config=user_config)
+        result = llm.invoke(prompt)
+        title = result.content.strip().strip('"').strip("'").strip()
+        if len(title) < 2 or len(title) > 80:
+            return user_msg[:40]
+        return title
+    except Exception:
+        return user_msg[:40]
+
+
+def update_thread_names(db, user_id, thread_id, thread_name):
+    db.query(ConversationLog).filter(
+        ConversationLog.user_id == user_id,
+        ConversationLog.thread_id == thread_id,
+    ).update({"thread_name": thread_name})
     db.commit()
 
 
@@ -434,7 +485,7 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
 
     if payload.user_id is not None:
         thread_name = payload.message[:80]
-        logging_turns(
+        turn = logging_turns(
             db,
             user_id=payload.user_id,
             thread_id=payload.thread_id,
@@ -450,6 +501,14 @@ def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
             role="assistant",
             content=response_text,
         )
+        if turn == 0:
+            try:
+                config = _get_user_config(payload.user_id, db)
+                if config:
+                    title = generate_thread_title(payload.message, response_text, config)
+                    update_thread_names(db, payload.user_id, payload.thread_id, title)
+            except Exception:
+                pass
     _write_trace_log(
         payload.thread_id,
         payload.message,
@@ -670,7 +729,7 @@ async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
 
         if payload.user_id is not None:
             thread_name = payload.message[:80]
-            logging_turns(
+            turn = logging_turns(
                 db,
                 user_id=payload.user_id,
                 thread_id=payload.thread_id,
@@ -686,6 +745,14 @@ async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
                 role="assistant",
                 content=trace_text,
             )
+            if turn == 0:
+                try:
+                    config = _get_user_config(payload.user_id, db)
+                    if config:
+                        title = generate_thread_title(payload.message, trace_text, config)
+                        update_thread_names(db, payload.user_id, payload.thread_id, title)
+                except Exception:
+                    pass
 
         yield _sse(
             {
