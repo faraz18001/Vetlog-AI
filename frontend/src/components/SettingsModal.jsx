@@ -54,11 +54,15 @@ export default function SettingsModal({ isOpen, onClose, user }) {
         var p = data.provider || "ollama";
         var mdl = data.model || "";
         var hint = data.api_key_masked || "";
-        setProvider(p);
+        // Guard: only apply if the provider dropdown still matches what was requested.
+        // Prevents a stale fetchSettings() response from overwriting the user's current selection.
+        setProvider(function (current) {
+          if (prov && current !== prov) return current;
+          return p;
+        });
         setModel(mdl);
         setSavedKeyHint(hint);
         setConfiguredProviders(data.configured_providers || []);
-        // Auto-fetch models if we have a key saved or it's Ollama
         if (p === "ollama" || hint) {
           fetchModelsForProvider(p);
         }

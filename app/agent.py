@@ -49,6 +49,8 @@ def get_system_prompt() -> str:
 Today's date: {datetime.now().strftime("%Y-%m-%d")}
 
 Database: raw_messages — columns: id, chat_name, sender, text, timestamp, captured_at
+Timestamps are ISO-8601 strings (YYYY-MM-DD HH:MM:SS). Use BETWEEN for date ranges, not LIKE patterns.
+  Example: WHERE timestamp BETWEEN '2026-04-01' AND '2026-04-30 23:59:59'
 
 TOOL ROUTING — pick ONE path per request.
 
