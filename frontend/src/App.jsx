@@ -75,16 +75,6 @@ export default function App() {
 
 
           <div className="topbar-right">
-            {sessionUsage.total_tokens > 0 && (
-              <div className="topbar-usage" aria-label="Session token usage">
-                <span>{sessionUsage.total_tokens.toLocaleString()} tokens</span>
-                {sessionUsage.cost_usd > 0 && (
-                  <span className="topbar-usage-cost">
-                    ${sessionUsage.cost_usd.toFixed(4)}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         </header>
 
