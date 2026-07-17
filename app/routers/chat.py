@@ -474,7 +474,7 @@ def _get_agent_for_user(user_id: int | None, db: Session):
 @router.post("/chat/", response_model=ChatResponse)
 def chat_endpoint(payload: ChatRequest, db: Session = Depends(get_session)):
     agent = _get_agent_for_user(payload.user_id, db)
-    config = {"configurable": {"thread_id": payload.thread_id}}
+    config = {"configurable": {"thread_id": payload.thread_id}, "recursion_limit": 100}
     result = agent.invoke({"messages": [("user", payload.message)]}, config=config)
     messages = result["messages"]
     last_message = messages[-1]
@@ -551,7 +551,7 @@ async def chat_stream(payload: ChatRequest, db: Session = Depends(get_session)):
             yield _sse({"type": "error", "message": exc.detail})
             return
 
-        config = {"configurable": {"thread_id": payload.thread_id}}
+        config = {"configurable": {"thread_id": payload.thread_id}, "recursion_limit": 100}
 
         try:
             async for event in agent.astream_events(

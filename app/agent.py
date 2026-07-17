@@ -6,7 +6,18 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
+from deepagents import create_deep_agent, HarnessProfile, register_harness_profile
+
+# Exclude built-in filesystem, shell, and sub-agent tools — we only need
+# our SQL tools + the built-in write_todos (planning).
+_vetlog_profile = HarnessProfile(
+    excluded_tools=frozenset([
+        "ls", "read_file", "write_file", "edit_file",
+        "glob", "grep", "execute", "task",
+    ])
+)
+for _provider in ("google_genai", "openai", "ollama", "default"):
+    register_harness_profile(_provider, _vetlog_profile)
 
 from app.tools import (
     execute_sql_query,
@@ -256,7 +267,7 @@ def get_llm_model(user_config=None):
 
 def initialize_agent(user_config=None):
     """
-    Build and return the LangGraph ReAct agent.
+    Build and return the LangGraph deep agent.
 
     Accepts an optional user_config dict (provider, model, api_key) from
     per-user settings. Falls back to .env if not provided.
@@ -266,11 +277,11 @@ def initialize_agent(user_config=None):
     """
     chat_model = get_llm_model(user_config)
 
-    agent_graph = create_react_agent(
+    agent_graph = create_deep_agent(
         model=chat_model,
         tools=tools,
+        system_prompt=get_system_prompt(),
         checkpointer=_agent_checkpointer,
-        prompt=get_system_prompt(),
     )
 
     return agent_graph

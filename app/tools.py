@@ -239,7 +239,7 @@ but what if the dude asks a detailed report then we might have to give it to the
 
 
 @tool
-def execute_sql_query(query: str, limit: int = 10) -> str:
+def execute_sql_query(query: str) -> str:
     """
     Execute a read-only SQL query against the Vetlog SQLite database.
 
@@ -254,11 +254,10 @@ def execute_sql_query(query: str, limit: int = 10) -> str:
     - For "total donations" use SUM on numeric values in text
     - Never invent data — only return what the query actually finds
     - Default chat names in the DB follow a prefix pattern; use LIKE for matching
+    - This tool returns a MAXIMUM OF 100 ROWS. If you need fewer rows, use LIMIT in your SQL.
 
     Args:
         query: A valid SQLite SELECT statement.
-        limit: Max rows to return (default 10, max 100). Use limit=100 when
-               gathering data for a report or when you need many rows.
 
     Returns:
         A tab-separated string of results (header row + data rows),
@@ -280,7 +279,7 @@ def execute_sql_query(query: str, limit: int = 10) -> str:
             column_names.append(description[0])
         rows = _rows_with_display_timestamps(column_names, rows)
         header = "\t".join(column_names)
-        MAX_ROWS = min(limit, 100)
+        MAX_ROWS = 100
         data_rows = []
         for row in rows[:MAX_ROWS]:
             row_str = ""
