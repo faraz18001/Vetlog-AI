@@ -143,6 +143,9 @@ def generate_static_report(
     Call this tool after execute_sql_query when the user asks for a structured
     report. The report is written to the reports/ directory and its filename is
     returned — the UI will display the markdown and offer a PDF download.
+    
+    IMPORTANT: DO NOT use this tool if you are also calling query_to_inline_table 
+    or generate_dynamic_report. Choose EXACTLY ONE reporting tool to display data.
 
     IMPORTANT: When you call generate_static_report,do NOT repeat the data in your
       text reply. The UI already shows the report/table as a preview card. Just confirm
@@ -310,10 +313,13 @@ def query_to_inline_table(query: str, title: str = "Query Results") -> str:
     to a file. Use this when the user wants to see ALL rows or a large dataset
     (e.g. "show all donations", "list every message from June").
 
-    Unlike execute_sql_query (which caps at 10 rows), this tool runs the query
+    Unlike execute_sql_query (which caps at 100 rows), this tool runs the query
     unbounded and writes every row to a file. The file path is returned — the
     UI renders the full table inline in the chat, bypassing the LLM context
     limit entirely.
+    
+    IMPORTANT: DO NOT use this tool if you are also calling generate_static_report 
+    or generate_dynamic_report. Choose EXACTLY ONE tool to present data.
 
     Only SELECT statements are allowed. A safety cap of 5000 rows prevents
     pathological queries.
