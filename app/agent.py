@@ -165,6 +165,7 @@ def build_openai_compatible_model(provider: str, api_key: str, model_name: str):
         "mistral": "https://api.mistral.ai/v1",
         "cerebras": "https://api.cerebras.ai/v1",
         "openrouter": "https://openrouter.ai/api/v1",
+        "opencode": "https://opencode.ai/zen/v1",
         "openai": None,  # Uses the default OpenAI URL
     }
 
@@ -236,6 +237,7 @@ def get_llm_model(user_config=None):
         "mistral": "MISTRAL",
         "cerebras": "CEREBRAS",
         "openrouter": "OPENROUTER",
+        "opencode": "OPENCODE",
         "openai": "OPENAI",
     }
 

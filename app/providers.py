@@ -10,6 +10,7 @@ PROVIDERS = {
     "mistral": {"id": "mistral", "name": "Mistral"},
     "cerebras": {"id": "cerebras", "name": "Cerebras"},
     "openrouter": {"id": "openrouter", "name": "OpenRouter"},
+    "opencode": {"id": "opencode", "name": "OpenCode"},
 }
 
 _cache = {}  # {provider: (timestamp, [models...])}
@@ -90,7 +91,9 @@ async def fetch_openai_compatible_models(
     base_url: str, api_key: str
 ) -> list[str]:
     url = base_url.rstrip("/") + "/v1/models"
-    headers = {"Authorization": f"Bearer {api_key}"}
+    headers = {}
+    if api_key:
+        headers["Authorization"] = "Bearer " + api_key
     resp = httpx.get(url, headers=headers, timeout=15)
     resp.raise_for_status()
     data = resp.json()
@@ -116,12 +119,13 @@ async def get_models_for_provider(provider_id: str, api_key: str = "") -> dict:
             models = await fetch_openai_models(api_key)
         elif provider_id == "gemini":
             models = await fetch_gemini_models(api_key)
-        elif provider_id in ("groq", "mistral", "cerebras", "openrouter"):
+        elif provider_id in ("groq", "mistral", "cerebras", "openrouter", "opencode"):
             base_urls = {
                 "groq": "https://api.groq.com/openai",
                 "mistral": "https://api.mistral.ai",
                 "cerebras": "https://api.cerebras.ai",
                 "openrouter": "https://openrouter.ai/api",
+                "opencode": "https://opencode.ai/zen",
             }
             base_url = base_urls.get(provider_id)
             models = await fetch_openai_compatible_models(base_url, api_key)
