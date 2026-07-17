@@ -38,7 +38,11 @@ _agent_checkpointer = None
 async def init_checkpointer():
     """Create the shared AsyncSqliteSaver — called once during app startup."""
     global _agent_checkpointer
-    conn = await aiosqlite.connect("vetlog.db")
+    db_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "vetlog.db",
+    )
+    conn = await aiosqlite.connect(db_path)
     _agent_checkpointer = AsyncSqliteSaver(conn=conn)
 
 
@@ -52,38 +56,34 @@ Database: raw_messages — columns: id, chat_name, sender, text, timestamp, capt
 Timestamps are ISO-8601 strings (YYYY-MM-DD HH:MM:SS). Use BETWEEN for date ranges, not LIKE patterns.
   Example: WHERE timestamp BETWEEN '2026-04-01' AND '2026-04-30 23:59:59'
 
-TOOL ROUTING — pick ONE path per request.
+WORKFLOW — plan first, then execute step by step. You can call tools as many times as needed.
 
-Path 1 — Quick lookup
-  Trigger: "how many", "did", "was there", "total", counts, sums, yes/no checks
-  Tool → execute_sql_query
-  [CONTEXT] Result returns to your context. Cap at 10 rows. Never fetch full datasets here.
+Step 1 — Peek: Always run ONE SELECT LIMIT 5 first to see the data format.
+  Example: SELECT chat_name, text FROM raw_messages LIMIT 5
 
-Path 2 — View raw data
-  Trigger: "show", "see", "list all", "display", "every", "all rows"
-  Tool → query_to_inline_table
-  [FILE] Full data saved to file. You get the path only — zero context impact.
+Step 2 — Plan: Based on what you saw, decide which queries answer the question.
+  Simple (count, sum, yes/no): 1 query.  Complex (compare, breakdown): 2-3 queries.
 
-Path 3 — Standard report
-  Trigger: "report" + category (daily_summary, donation_ledger, treatment_log, attendance_sheet)
-  Chain → execute_sql_query(limit=100) → generate_static_report
-  [FILE] Report saved to file. You get the path only.
+Step 3 — Execute: Run each query. Use one result to shape the next.
+  For clinical: WHERE chat_name LIKE '%Clinical%'
+  For donations: WHERE chat_name LIKE '%Donations%'  (amounts are "PKR 15000" in text)
+  For attendance: WHERE chat_name LIKE '%Attendance%'
 
-Path 4 — Custom report
-  Trigger: "report" + anything else (timeline, breakdown, history, custom analysis)
-  Chain → execute_sql_query(limit=100) → generate_dynamic_report
-  [FILE] Report saved to file. You get the path only.
+Step 4 — Answer: Short direct answer. Only generate reports when asked.
 
 Rules:
-- Never invent data. Only report what the DB returns.
-- If SQL errors, fix and retry.
-- Keep answers short. After query_to_inline_table or a report, reply in one sentence — the UI shows the data.
-- In reports with 20+ rows: group by week/condition. Never use "..." or "(continued)".
+- Never invent data. If SQL errors, fix and retry.
+- When counting things: use COUNT(*). When grouping: use GROUP BY.
+- Keep answers short. Reply with numbers, not walls of text.
 
-Examples:
-- "Did Dr. Faraz treat Max?" → SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%'
-- "Show all donations from June" → query_to_inline_table(query='SELECT ... WHERE text LIKE '%PKR%'', title='All Donations from June')
-- "Generate a treatment timeline for Rocky" → query Rocky messages → generate_dynamic_report(title='Rocky Treatment Timeline', content=...)
+Examples of multi-step:
+Q: "Which animal had most treatments and what were the top 3 treatments?"
+Step 1: SELECT text FROM raw_messages WHERE chat_name LIKE '%Clinical%' LIMIT 5
+  → See patterns like "Treated Oreo (Dog) — deworming"
+Step 2: Run per-treatment counts:
+  SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%deworming%'
+  (repeat for each treatment type seen)
+Step 3: Answer — "Wound care (31), deworming (13), vaccination (12). Whiskey had 10 treatments."
 """
 
 
