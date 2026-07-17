@@ -96,18 +96,8 @@ function MessageBubble({ message }) {
       <div
         className={`msg-bubble ${isUser ? "msg-bubble--user" : "msg-bubble--ai"}`}
       >
-        {/* Thinking dots — shown only when streaming hasn't produced any steps or text yet */}
-        {!isUser && isStreaming && !content && (!steps || steps.length === 0) ? (
-          <span
-            className="msg-thinking"
-            role="status"
-            aria-label="Vetlog AI is thinking"
-          >
-            <span className="dot" />
-            <span className="dot" />
-            <span className="dot" />
-          </span>
-        ) : (
+        {/* Content */}
+        {(content || isUser || isError) ? (
           <div
             className={[
               "msg-content",
@@ -126,7 +116,7 @@ function MessageBubble({ message }) {
               </ReactMarkdown>
             )}
           </div>
-        )}
+        ) : null}
 
         {showCopy && <CopyButton text={content} />}
 
@@ -136,8 +126,8 @@ function MessageBubble({ message }) {
           </span>
         )}
 
-        {/* Step chain — shown for AI messages that triggered tool calls */}
-        {!isUser && (steps?.length > 0 || isStreaming) && (
+        {/* Step chain — shown for AI messages that triggered tool calls, or initially while thinking */}
+        {!isUser && (steps?.length > 0 || (isStreaming && !content)) && (
           <StepChain steps={steps ?? []} isStreaming={isStreaming} />
         )}
 

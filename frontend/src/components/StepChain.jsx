@@ -58,19 +58,48 @@ function StepNode({ label, isLast, isStreaming }) {
  *   isStreaming - True while the agent is still working
  */
 export default function StepChain({ steps, isStreaming }) {
-  const [expanded, setExpanded] = useState(true);
-
-  // Auto-collapse 2 s after the agent finishes
-  useEffect(() => {
-    if (isStreaming || steps.length === 0) return;
-    const t = setTimeout(() => setExpanded(false), 2000);
-    return () => clearTimeout(t);
-  }, [isStreaming, steps.length]);
+  const [expanded, setExpanded] = useState(false);
 
   if (steps.length === 0 && !isStreaming) return null;
 
   /* ── Collapsed summary pill ─────────────────────────────────────── */
   if (!expanded) {
+    if (isStreaming) {
+      const currentStatus = steps.length > 0 ? steps[steps.length - 1].label : "Thinking...";
+      const l = currentStatus.toLowerCase();
+      let dotColor = "var(--color-text-muted)";
+      if (l.includes("fail") || l.includes("error")) {
+        dotColor = "var(--color-error)";
+      } else if (l.includes("sql") || l.includes("query") || l.includes("database") || l.includes("row")) {
+        dotColor = "#22c55e"; // green for executing/sql tasks
+      } else if (l.includes("thinking") || steps.length === 0) {
+        dotColor = "var(--color-accent)"; // purple for initial thinking
+      }
+
+      return (
+        <div 
+          className="msg-thinking" 
+          style={{ padding: 0, margin: 'var(--space-2) 0 var(--space-1)', gap: 'var(--space-2)', fontSize: 'var(--text-base)', color: 'var(--color-text)' }}
+        >
+          <span className="dot" style={{ width: 4, height: 4, backgroundColor: dotColor, transition: 'background-color 0.3s' }} />
+          <span className="dot" style={{ width: 4, height: 4, backgroundColor: dotColor, transition: 'background-color 0.3s' }} />
+          <span className="dot" style={{ width: 4, height: 4, backgroundColor: dotColor, transition: 'background-color 0.3s' }} />
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={currentStatus}
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, filter: "blur(4px)" }}
+              transition={{ duration: 0.2 }}
+              style={{ marginLeft: 'var(--space-1)' }}
+            >
+              {currentStatus}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+      );
+    }
+
     return (
       <motion.button
         layout
