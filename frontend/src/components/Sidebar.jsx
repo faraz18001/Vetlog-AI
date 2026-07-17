@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MessageCirclePlus, MessageSquare, Settings, CircleUserRound, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { MessageCirclePlus, MessageSquare, Settings, CircleUserRound, LogOut, PanelLeftClose, PanelLeftOpen, Cat } from "lucide-react";
 import { motion } from "framer-motion";
 import * as Popover from "@radix-ui/react-popover";
 import "./Sidebar.css";
@@ -73,18 +73,28 @@ export default function Sidebar({ isOpen, onToggle, onNewChat, isNewChatDisabled
       <div className="sidebar-inner">
 
         <div className="sidebar-header">
-          <button
-            className="sidebar-toggle-btn"
-            onClick={onToggle}
-            aria-label="Toggle sidebar"
-            title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            {isOpen ? (
-              <PanelLeftClose size={18} strokeWidth={2} />
-            ) : (
-              <PanelLeftOpen size={18} strokeWidth={2} />
+          <div className="sidebar-top-row">
+            {isOpen && (
+              <div className="sidebar-brand">
+                <span className="sidebar-brand-mark">
+                  <Cat size={22} strokeWidth={2.25} />
+                </span>
+                <span className="sidebar-wordmark">Vetlog AI</span>
+              </div>
             )}
-          </button>
+            <button
+              className="sidebar-toggle-btn"
+              onClick={onToggle}
+              aria-label="Toggle sidebar"
+              title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {isOpen ? (
+                <PanelLeftClose size={18} strokeWidth={2} />
+              ) : (
+                <PanelLeftOpen size={18} strokeWidth={2} />
+              )}
+            </button>
+          </div>
 
           <button
             className="sidebar-new-chat"

@@ -6,7 +6,7 @@ import InputBar from "./components/InputBar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import SettingsModal from "./components/SettingsModal.jsx";
 import LoginPage from "./components/LoginPage.jsx";
-import { Cat } from "lucide-react";
+import { Menu } from "lucide-react";
 import "./App.css";
 
 
@@ -72,12 +72,7 @@ export default function App() {
       <div className="app-content">
         {/* ---- Topbar ---- */}
         <header className="topbar">
-          <div className="topbar-brand">
-            <span className="topbar-brand-mark">
-              <Cat size={22} strokeWidth={2.25} />
-            </span>
-            <span className="topbar-wordmark">Vetlog AI</span>
-          </div>
+
 
           <div className="topbar-right">
             {sessionUsage.total_tokens > 0 && (

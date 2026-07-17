@@ -101,26 +101,7 @@ body {
     position: relative;
 }
 
-.topbar-brand {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-width: 0;
-}
 
-.topbar-brand-mark {
-    color: var(--color-accent);
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    filter: drop-shadow(0 2px 6px oklch(62% 0.20 295 / 0.25));
-}
-
-.topbar-brand-icon {
-    color: var(--color-accent);
-    display: flex;
-    align-items: center;
-}
 
 .topbar-icon-btn {
     display: flex;
