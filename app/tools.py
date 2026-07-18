@@ -124,7 +124,7 @@ def _rows_with_display_timestamps(column_names, rows):
 def generate_static_report(
     report_type: str,
     title: str,
-    data: str,
+    query: str,
     summary: str = "",
     date: str = "",
 ) -> str:
@@ -135,33 +135,27 @@ def generate_static_report(
     2. categories: daily_summary, donation_ledger, treatment_log, or attendance_sheet.
     3. For reports about a specific date: ALWAYS pass the date parameter to generate_static_report
       (e.g. date='2026-03-27') so the title and filename use the report's subject date, not today.
-    4. For reports: SELECT specific columns (chat_name, sender, text, timestamp). Omit id and captured_at.
-    5. When writing reports with 20+ rows: group entries by week or condition instead of
-      listing every single row. Use the full data to produce an informative summary — never
-      abbreviate rows with "..." or "(continued)" placeholders.
+    4. Provide the exact SQL query in the 'query' parameter (e.g. SELECT sender, text, timestamp FROM raw_messages...).
+       The tool will execute the query and format the results directly. Omit id and captured_at.
 
-    Call this tool after execute_sql_query when the user asks for a structured
-    report. The report is written to the reports/ directory and its filename is
-    returned — the UI will display the markdown and offer a PDF download.
+    Call this tool when the user asks for a structured report. The report is written to 
+    the reports/ directory and its filename is returned — the UI will display the markdown.
     
     IMPORTANT: DO NOT use this tool if you are also calling query_to_inline_table 
     or generate_dynamic_report. Choose EXACTLY ONE reporting tool to display data.
 
-    IMPORTANT: When you call generate_static_report,do NOT repeat the data in your
-      text reply. The UI already shows the report/table as a preview card. Just confirm
-      in one sentence that the report is ready (e.g. "Your attendance report is ready.").
+    IMPORTANT: When you call generate_static_report, do NOT repeat the data in your
+      text reply. Just confirm in one sentence that the report is ready.
 
     Args:
         report_type: One of 'daily_summary', 'donation_ledger', 'treatment_log', 'attendance_sheet'.
         title:       A short human-readable title for the report (e.g. 'June 24 Clinic Activity').
-        data:        The raw tab-separated result from execute_sql_query.
-                     IMPORTANT: SELECT only relevant columns (sender, text, timestamp) — omit id, captured_at.
+        query:       The exact SQLite SELECT query to fetch the report data.
         summary:     A 2-3 sentence summary of what the report contains (patient count, key events, totals).
         date:        The SUBJECT date of the report (e.g. '2026-03-27'), NOT today's date.
-                     Use this when the report is about a specific day in the past.
 
     Returns:
-        The filename of the saved report (e.g. 'reports/daily_summary_2025-06-25.md').
+        The filename of the saved report.
     """
     if report_type not in _REPORT_TEMPLATES:
         template_keys = ""
@@ -176,8 +170,25 @@ def generate_static_report(
             + template_keys
         )
 
+    connection = sqlite3.connect(DB_PATH)
+    try:
+        cursor = connection.cursor()
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        column_names = [desc[0] for desc in cursor.description]
+        rows = _rows_with_display_timestamps(column_names, rows)
+        
+        data_lines = []
+        for row in rows:
+            data_lines.append("\t".join(str(cell) for cell in row))
+        tsv = "\t".join(column_names) + "\n" + "\n".join(data_lines) if data_lines else "No results found."
+        table_md = _tsv_to_markdown_table(tsv) if data_lines else "_No data found for this query._"
+    except Exception as e:
+        return f"Error executing query for report: {e}"
+    finally:
+        connection.close()
+
     date_str = date or datetime.now().strftime("%Y-%m-%d")
-    table_md = _tsv_to_markdown_table(data)
 
     safe_title = title.lower().replace(" ", "_")[:30]
     filename = f"{report_type}_{date_str}_{safe_title}.md"
@@ -254,10 +265,10 @@ def execute_sql_query(query: str) -> str:
     SQL patterns for this DB:
     - Use LIKE with wildcards for text searches (e.g. WHERE text LIKE '%Rocky%')
     - Use GROUP BY and COUNT for summaries
-    - For "total donations" use SUM on numeric values in text
     - Never invent data — only return what the query actually finds
     - Default chat names in the DB follow a prefix pattern; use LIKE for matching
     - This tool returns a MAXIMUM OF 100 ROWS. If you need fewer rows, use LIMIT in your SQL.
+    - If you hit the 100-row limit and need all the data, DO NOT paginate with OFFSET. Use query_to_inline_table.
 
     Args:
         query: A valid SQLite SELECT statement.
@@ -280,7 +291,6 @@ def execute_sql_query(query: str) -> str:
         column_names = []
         for description in cursor.description:
             column_names.append(description[0])
-        rows = _rows_with_display_timestamps(column_names, rows)
         header = "\t".join(column_names)
         MAX_ROWS = 100
         data_rows = []

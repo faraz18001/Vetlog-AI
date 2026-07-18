@@ -73,11 +73,11 @@ Step 1 — Peek: Always run ONE SELECT LIMIT 5 first to see the data format.
   Example: SELECT chat_name, text FROM raw_messages LIMIT 5
 
 Step 2 — Plan: Based on what you saw, decide which queries answer the question.
-  Simple (count, sum, yes/no): 1 query.  Complex (compare, breakdown): 2-3 queries.
+  Simple (count, yes/no): 1 query.  Complex (compare, breakdown): 2-3 queries.
 
 Step 3 — Execute: Run each query. Use one result to shape the next.
   For clinical: WHERE chat_name LIKE '%Clinical%'
-  For donations: WHERE chat_name LIKE '%Donations%'  (amounts are "PKR 15000" in text)
+  For donations: WHERE chat_name LIKE '%Donations%'
   For attendance: WHERE chat_name LIKE '%Attendance%'
 
 Step 4 — Answer: Short direct answer. Only generate reports when asked.
@@ -85,16 +85,15 @@ Step 4 — Answer: Short direct answer. Only generate reports when asked.
 Rules:
 - Never invent data. If SQL errors, fix and retry.
 - When counting things: use COUNT(*). When grouping: use GROUP BY.
+- Do NOT guess values in UNION ALL or OR chains. If data cannot be grouped natively in SQLite because it is unstructured text, inform the user.
+- If a query returns the '100 row limit' warning, DO NOT paginate using OFFSET. If you need all the data, use query_to_inline_table instead.
 - Keep answers short. Reply with numbers, not walls of text.
 
 Examples of multi-step:
-Q: "Which animal had most treatments and what were the top 3 treatments?"
-Step 1: SELECT text FROM raw_messages WHERE chat_name LIKE '%Clinical%' LIMIT 5
-  → See patterns like "Treated Oreo (Dog) — deworming"
-Step 2: Run per-treatment counts:
-  SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%deworming%'
-  (repeat for each treatment type seen)
-Step 3: Answer — "Wound care (31), deworming (13), vaccination (12). Whiskey had 10 treatments."
+Q: "How many treatments did Oreo have?"
+Step 1: SELECT text FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%Oreo%' LIMIT 5
+Step 2: SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%Oreo%'
+Step 3: Answer — "Oreo had 4 treatments."
 """
 
 
