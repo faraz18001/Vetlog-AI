@@ -1,3 +1,5 @@
+import contextlib
+import io
 import os
 import sqlite3
 from datetime import datetime
@@ -408,5 +410,63 @@ def query_to_inline_table(query: str, title: str = "Query Results") -> str:
     except Exception as error:
         return f"Error: {error}"
 
+    finally:
+        connection.close()
+
+
+@tool
+def execute_python_analytics(query: str, python_script: str) -> str:
+    """
+    Execute a SQLite query and pass the resulting rows to a custom Python script for analysis.
+    
+    Use this when you need to parse unstructured text (like extracting names, counting occurrences of irregular patterns, etc.) 
+    where SQLite's GROUP BY fails and simple Regex isn't enough.
+    
+    The tool will:
+    1. Run your `query` against the database.
+    2. Expose the results to your `python_script` as a list of dictionaries named `rows`.
+       Example `rows`: [{"id": 1, "text": "Daisy (Goat) treated"}, {"id": 2, "text": "JDC Foundation donated"}]
+    3. Run your script. Any text you `print()` in your script will be returned to you.
+    
+    Args:
+        query: The SQL query to fetch the data (e.g. "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%'").
+        python_script: The Python code to process the `rows` variable. Must use `print()` to output the result.
+            Example python_script:
+            counts = {}
+            for row in rows:
+                text = row['text']
+                if 'JDC' in text: counts['JDC Foundation'] = counts.get('JDC Foundation', 0) + 1
+                elif 'Saylani' in text: counts['Saylani Trust'] = counts.get('Saylani Trust', 0) + 1
+            
+            for k, v in sorted(counts.items(), key=lambda x: x[1], reverse=True)[:5]:
+                print(f"{k}: {v}")
+    """
+    connection = sqlite3.connect(DB_PATH)
+    connection.row_factory = sqlite3.Row
+    try:
+        cursor = connection.cursor()
+        cursor.execute(query)
+        fetched_rows = cursor.fetchall()
+        
+        # Convert sqlite3.Row to standard dict for the script
+        rows = [dict(row) for row in fetched_rows]
+        
+        # Set up a sandbox environment with the `rows` variable injected
+        local_env = {"rows": rows, "re": __import__("re"), "Counter": __import__("collections").Counter}
+        
+        # Capture stdout
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            try:
+                exec(python_script, {}, local_env)
+            except Exception as e:
+                return f"Python Script Error: {e}"
+        
+        output = f.getvalue()
+        if not output.strip():
+            return "The script executed successfully but printed nothing. Make sure to use print()."
+        return output
+    except Exception as e:
+        return f"Database Error: {e}"
     finally:
         connection.close()

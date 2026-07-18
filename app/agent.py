@@ -24,6 +24,7 @@ from app.tools import (
     generate_dynamic_report,
     generate_static_report,
     query_to_inline_table,
+    execute_python_analytics,
 )
 
 tools = [
@@ -31,6 +32,7 @@ tools = [
     query_to_inline_table,
     generate_static_report,
     generate_dynamic_report,
+    execute_python_analytics,
 ]
 
 """
@@ -85,7 +87,7 @@ Step 4 — Answer: Short direct answer. Only generate reports when asked.
 Rules:
 - Never invent data. If SQL errors, fix and retry.
 - When counting things: use COUNT(*). When grouping: use GROUP BY.
-- Do NOT guess values in UNION ALL or OR chains. If data cannot be grouped natively in SQLite because it is unstructured text, inform the user.
+- Do NOT guess values in UNION ALL or OR chains. If data cannot be grouped natively in SQLite because it is unstructured text, use the execute_python_analytics tool.
 - If a query returns the '100 row limit' warning, DO NOT paginate using OFFSET. If you need all the data, use query_to_inline_table instead.
 - Keep answers short. Reply with numbers, not walls of text.
 
@@ -94,6 +96,11 @@ Q: "How many treatments did Oreo have?"
 Step 1: SELECT text FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%Oreo%' LIMIT 5
 Step 2: SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%Oreo%'
 Step 3: Answer — "Oreo had 4 treatments."
+
+Q: "Who are our top 3 most frequent donors?"
+Step 1: SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' LIMIT 5
+Step 2: execute_python_analytics(query="SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%'", python_script="counts = {{}}\\nfor r in rows:\\n  if 'JDC' in r['text']: counts['JDC Foundation'] = counts.get('JDC Foundation', 0) + 1\\n  elif 'Saylani' in r['text']: counts['Saylani'] = counts.get('Saylani', 0) + 1\\nfor k,v in counts.items(): print(f'{{k}}: {{v}}')")
+Step 3: Answer — "JDC Foundation is the top donor."
 """
 
 
