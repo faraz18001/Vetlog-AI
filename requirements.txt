@@ -14,3 +14,4 @@ deepagents>=0.6.0
 Markdown>=3.10.0
 # httpx is a langchain dependency; included explicitly for clarity
 httpx>=0.28.0
+pandas>=2.0.0

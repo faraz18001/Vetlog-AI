@@ -24,7 +24,11 @@ from app.tools import (
     generate_dynamic_report,
     generate_static_report,
     query_to_inline_table,
+<<<<<<< HEAD
     execute_python_analytics,
+=======
+    execute_python_script,
+>>>>>>> 62ad95b (agent is not getting stuck at loops now)
 )
 
 tools = [
@@ -32,7 +36,11 @@ tools = [
     query_to_inline_table,
     generate_static_report,
     generate_dynamic_report,
+<<<<<<< HEAD
     execute_python_analytics,
+=======
+    execute_python_script,
+>>>>>>> 62ad95b (agent is not getting stuck at loops now)
 ]
 
 """
@@ -74,6 +82,7 @@ WORKFLOW — plan first, then execute step by step. You can call tools as many t
 Step 1 — Peek: Always run ONE SELECT LIMIT 5 first to see the data format.
   Example: SELECT chat_name, text FROM raw_messages LIMIT 5
 
+<<<<<<< HEAD
 Step 2 — Plan: Based on what you saw, decide which queries answer the question.
   Simple (count, yes/no): 1 query.  Complex (compare, breakdown): 2-3 queries.
 
@@ -81,10 +90,21 @@ Step 3 — Execute: Run each query. Use one result to shape the next.
   For clinical: WHERE chat_name LIKE '%Clinical%'
   For donations: WHERE chat_name LIKE '%Donations%'
   For attendance: WHERE chat_name LIKE '%Attendance%'
+=======
+Step 2 — Plan: Based on what you saw, decide which tool answers the question.
+  Simple (count, yes/no): Use execute_sql_query. It is limited to 100 rows.
+  Complex Analytics (summing unstructured text over thousands of rows): Use execute_python_script. Connect directly to 'data/vetlog.db', pull data with pandas, compute, and print the answer.
+
+Step 3 — Execute: Run the chosen tool. Use one result to shape the next.
+  For clinical: chat_name LIKE '%Clinical%'
+  For donations: chat_name LIKE '%Donations%'
+  For attendance: chat_name LIKE '%Attendance%'
+>>>>>>> 62ad95b (agent is not getting stuck at loops now)
 
 Step 4 — Answer: Short direct answer. Only generate reports when asked.
 
 Rules:
+<<<<<<< HEAD
 - Never invent data. If SQL errors, fix and retry.
 - When counting things: use COUNT(*). When grouping: use GROUP BY.
 - Do NOT guess values in UNION ALL or OR chains. If data cannot be grouped natively in SQLite because it is unstructured text, use the execute_python_analytics tool.
@@ -101,6 +121,18 @@ Q: "Who are our top 3 most frequent donors?"
 Step 1: SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' LIMIT 5
 Step 2: execute_python_analytics(query="SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%'", python_script="counts = {{}}\\nfor r in rows:\\n  if 'JDC' in r['text']: counts['JDC Foundation'] = counts.get('JDC Foundation', 0) + 1\\n  elif 'Saylani' in r['text']: counts['Saylani'] = counts.get('Saylani', 0) + 1\\nfor k,v in counts.items(): print(f'{{k}}: {{v}}')")
 Step 3: Answer — "JDC Foundation is the top donor."
+=======
+- Never invent data. If SQL or Python errors, fix and retry.
+- When counting things in SQL: use COUNT(*). When grouping: use GROUP BY.
+- Keep answers short. Reply with numbers, not walls of text.
+
+Examples of multi-step:
+Q: "What is the total of all individual donations?"
+Step 1: SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' LIMIT 5
+Step 2: Recognize this needs python script because amounts are trapped in text.
+Step 3: Run execute_python_script with pandas pulling all records, regex matching PKR amounts, and printing the sum.
+Step 4: Answer — "Total donations: PKR 50000"
+>>>>>>> 62ad95b (agent is not getting stuck at loops now)
 """
 
 

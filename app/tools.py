@@ -410,11 +410,11 @@ def query_to_inline_table(query: str, title: str = "Query Results") -> str:
     except Exception as error:
         return f"Error: {error}"
 
-    finally:
         connection.close()
 
 
 @tool
+<<<<<<< HEAD
 def execute_python_analytics(query: str, python_script: str) -> str:
     """
     Execute a SQLite query and pass the resulting rows to a custom Python script for analysis.
@@ -470,3 +470,48 @@ def execute_python_analytics(query: str, python_script: str) -> str:
         return f"Database Error: {e}"
     finally:
         connection.close()
+=======
+def execute_python_script(python_script: str) -> str:
+    """
+    Execute a python script in a sandbox environment.
+    Use this to run complex pandas data analysis directly against the SQLite database.
+    You must use print() to output the final answer.
+    
+    Example script:
+    import sqlite3
+    import pandas as pd
+    import re
+    
+    conn = sqlite3.connect('data/vetlog.db')
+    df = pd.read_sql_query("SELECT text FROM raw_messages WHERE chat_name LIKE '%Donation%'", conn)
+    
+    total = 0
+    for text in df['text']:
+        match = re.search(r'PKR\s*(\d+)', str(text))
+        if match:
+            total += int(match.group(1))
+            
+    print(f"Total: PKR {total}")
+    """
+    import io, contextlib
+    
+    try:
+        import pandas as pd
+    except ImportError:
+        pd = None
+        
+    local_env = {"pd": pd, "re": __import__("re"), "sqlite3": __import__("sqlite3")}
+    
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        try:
+            # Pass local_env as BOTH globals and locals so lambdas work properly
+            exec(python_script, local_env, local_env)
+        except Exception as e:
+            return f"Python Script Error: {e}"
+    
+    output = f.getvalue()
+    if not output.strip():
+        return "The script executed successfully but printed nothing. Make sure to use print()."
+    return output
+>>>>>>> 62ad95b (agent is not getting stuck at loops now)
