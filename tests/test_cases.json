@@ -5,7 +5,10 @@
     "question": "Did Dr. Faraz treat a dog named Max?",
     "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND text LIKE '%Max%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["direct", "treatment"]
+    "tags": [
+      "direct",
+      "treatment"
+    ]
   },
   {
     "id": "D2",
@@ -13,7 +16,10 @@
     "question": "What did Nurse Ali administer to Coco?",
     "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Nurse Ali%' AND text LIKE '%Coco%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
-    "tags": ["direct", "medication"]
+    "tags": [
+      "direct",
+      "medication"
+    ]
   },
   {
     "id": "D3",
@@ -21,7 +27,10 @@
     "question": "Was there a donation from Paws Welfare Trust?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Paws Welfare Trust%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["direct", "donation"]
+    "tags": [
+      "direct",
+      "donation"
+    ]
   },
   {
     "id": "D4",
@@ -29,7 +38,10 @@
     "question": "Which animals were checked in by Receptionist Sara?",
     "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Receptionist Sara%' AND text LIKE '%checked in%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["direct", "checkin"]
+    "tags": [
+      "direct",
+      "checkin"
+    ]
   },
   {
     "id": "D5",
@@ -37,7 +49,10 @@
     "question": "Who was on duty at 10:00 AM?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%on duty%10:00 AM%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["direct", "attendance"]
+    "tags": [
+      "direct",
+      "attendance"
+    ]
   },
   {
     "id": "S1",
@@ -45,7 +60,10 @@
     "question": "Has any animal been treated for jaundice?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Jaundice%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["synonym", "diagnosis"]
+    "tags": [
+      "synonym",
+      "diagnosis"
+    ]
   },
   {
     "id": "S2",
@@ -53,7 +71,10 @@
     "question": "Did anyone treat a German Shepherd named Rocky?",
     "gold_sql": "SELECT * FROM raw_messages WHERE (text LIKE '%Rocky%' OR text LIKE '%German Shepherd%' OR text LIKE '%GSD%') AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["synonym", "animal"]
+    "tags": [
+      "synonym",
+      "animal"
+    ]
   },
   {
     "id": "S3",
@@ -61,7 +82,10 @@
     "question": "Which doctor treated the Golden Retriever?",
     "gold_sql": "SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%Golden Retriever%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["synonym", "doctor"]
+    "tags": [
+      "synonym",
+      "doctor"
+    ]
   },
   {
     "id": "S4",
@@ -69,7 +93,10 @@
     "question": "Was any surgery done on a Labrador?",
     "gold_sql": "SELECT * FROM raw_messages WHERE (text LIKE '%Labrador%' OR text LIKE '%Lab%') AND text LIKE '%Surgery%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
-    "tags": ["synonym", "surgery"]
+    "tags": [
+      "synonym",
+      "surgery"
+    ]
   },
   {
     "id": "T1",
@@ -77,7 +104,10 @@
     "question": "How many patients were discharged after kidney disease treatment?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Kidney Disease%' AND text LIKE '%discharged%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["temporal", "discharge"]
+    "tags": [
+      "temporal",
+      "discharge"
+    ]
   },
   {
     "id": "T2",
@@ -85,7 +115,10 @@
     "question": "Who checked in a dog named Charlie and what was it for?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Charlie%' AND (text LIKE '%checked in%' OR text LIKE '%dropped off%' OR text LIKE '%arrived%' OR text LIKE '%Check-in%') AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["temporal", "checkin"]
+    "tags": [
+      "temporal",
+      "checkin"
+    ]
   },
   {
     "id": "T3",
@@ -93,7 +126,10 @@
     "question": "Which animals were kept overnight for monitoring?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%kept overnight%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["temporal", "monitoring"]
+    "tags": [
+      "temporal",
+      "monitoring"
+    ]
   },
   {
     "id": "M1",
@@ -101,7 +137,10 @@
     "question": "Was there a donation specified for Buddy's treatment?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Buddy%' AND text LIKE '%donation%' OR (text LIKE '%Buddy%' AND text LIKE '%PKR%') AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["multi-message", "donation"]
+    "tags": [
+      "multi-message",
+      "donation"
+    ]
   },
   {
     "id": "M2",
@@ -109,7 +148,10 @@
     "question": "What did the blood work show for any animal?",
     "gold_sql": "SELECT * FROM raw_messages WHERE (text LIKE '%blood work%' OR text LIKE '%Blood work%') AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["multi-message", "lab"]
+    "tags": [
+      "multi-message",
+      "lab"
+    ]
   },
   {
     "id": "M3",
@@ -117,7 +159,10 @@
     "question": "Did Dr. Faraz treat any animal from Mr. Ahmed Khan?",
     "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Faraz%' AND (text LIKE '%Ahmed Khan%' OR text LIKE '%Mr. Khan%') AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
-    "tags": ["multi-message", "owner"]
+    "tags": [
+      "multi-message",
+      "owner"
+    ]
   },
   {
     "id": "M4",
@@ -125,7 +170,10 @@
     "question": "Which animals have X-ray results recorded?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%X-ray%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["multi-message", "lab"]
+    "tags": [
+      "multi-message",
+      "lab"
+    ]
   },
   {
     "id": "R1",
@@ -133,7 +181,10 @@
     "question": "Did Dr. Ahmed treat a brown dog for anemia?",
     "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Dr. Ahmed%' AND text LIKE '%brown%' AND text LIKE '%anemia%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
-    "tags": ["red-herring", "treatment"]
+    "tags": [
+      "red-herring",
+      "treatment"
+    ]
   },
   {
     "id": "R2",
@@ -141,7 +192,10 @@
     "question": "Who covered for Dr. Faraz when he signed off early?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Dr. Faraz%' AND text LIKE '%covering%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["red-herring", "attendance"]
+    "tags": [
+      "red-herring",
+      "attendance"
+    ]
   },
   {
     "id": "R3",
@@ -149,7 +203,10 @@
     "question": "Did Dr. Sarah Jenkins treat a Persian cat named Lucy?",
     "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Sarah Jenkins%' AND (text LIKE '%Lucy%' OR text LIKE '%Persian%') AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
-    "tags": ["red-herring", "doctor"]
+    "tags": [
+      "red-herring",
+      "doctor"
+    ]
   },
   {
     "id": "RC1",
@@ -157,7 +214,10 @@
     "question": "Is there a cat named Simba that was treated recently?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Simba%' AND chat_name LIKE 'TEST_%' ORDER BY id DESC LIMIT 5",
     "expected_min_rows": 1,
-    "tags": ["recency", "animal"]
+    "tags": [
+      "recency",
+      "animal"
+    ]
   },
   {
     "id": "RC2",
@@ -165,7 +225,10 @@
     "question": "What is the latest status of the animal named Charlie?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Charlie%' AND chat_name LIKE 'TEST_%' ORDER BY id DESC LIMIT 1",
     "expected_min_rows": 1,
-    "tags": ["recency", "status"]
+    "tags": [
+      "recency",
+      "status"
+    ]
   },
   {
     "id": "A1",
@@ -173,7 +236,10 @@
     "question": "Which doctors did NOT check in any patient yesterday?",
     "gold_sql": "SELECT DISTINCT sender FROM raw_messages WHERE chat_name LIKE 'TEST_%' AND sender NOT IN (SELECT DISTINCT sender FROM raw_messages WHERE text LIKE '%checked in%' OR text LIKE '%dropped off%' OR text LIKE '%arrived%' OR text LIKE '%Check-in%' OR text LIKE '%Walk-in%')",
     "expected_min_rows": 1,
-    "tags": ["absence", "doctor"]
+    "tags": [
+      "absence",
+      "doctor"
+    ]
   },
   {
     "id": "A2",
@@ -181,7 +247,10 @@
     "question": "How many donations were made by Mr. Usman?",
     "gold_sql": "SELECT COUNT(*) as cnt FROM raw_messages WHERE text LIKE '%Usman%' AND (text LIKE '%donor%' OR text LIKE '%donation%' OR text LIKE '%donated%' OR text LIKE '%contributed%') AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
-    "tags": ["absence", "donation"]
+    "tags": [
+      "absence",
+      "donation"
+    ]
   },
   {
     "id": "A3",
@@ -189,7 +258,10 @@
     "question": "Was there any animal treated for heartworm by Dr. Faraz?",
     "gold_sql": "SELECT * FROM raw_messages WHERE sender LIKE '%Dr. Faraz%' AND text LIKE '%Heartworm%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["absence", "treatment"]
+    "tags": [
+      "absence",
+      "treatment"
+    ]
   },
   {
     "id": "CX1",
@@ -197,7 +269,10 @@
     "question": "Did Al-Khidmat Foundation donate for a specific animal's surgery?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Al-Khidmat%' AND text LIKE '%surgery%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
-    "tags": ["cross-reference", "donation"]
+    "tags": [
+      "cross-reference",
+      "donation"
+    ]
   },
   {
     "id": "CX2",
@@ -205,7 +280,10 @@
     "question": "What was the total donation amount from Mrs. Fatima?",
     "gold_sql": "SELECT text FROM raw_messages WHERE text LIKE '%Mrs. Fatima%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["cross-reference", "donation"]
+    "tags": [
+      "cross-reference",
+      "donation"
+    ]
   },
   {
     "id": "CX3",
@@ -213,7 +291,10 @@
     "question": "Which doctor handled the most cases on duty?",
     "gold_sql": "SELECT sender, text FROM raw_messages WHERE text LIKE '%Cases:%' AND chat_name LIKE 'TEST_%' ORDER BY id DESC LIMIT 5",
     "expected_min_rows": 1,
-    "tags": ["cross-reference", "attendance"]
+    "tags": [
+      "cross-reference",
+      "attendance"
+    ]
   },
   {
     "id": "E1",
@@ -221,7 +302,10 @@
     "question": "Was anyone treated for Parvo in the clinic?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Parvo%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["edge", "diagnosis"]
+    "tags": [
+      "edge",
+      "diagnosis"
+    ]
   },
   {
     "id": "E2",
@@ -229,7 +313,10 @@
     "question": "Is there a rabbit named Oreo in the system?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%Oreo%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["edge", "animal"]
+    "tags": [
+      "edge",
+      "animal"
+    ]
   },
   {
     "id": "E3",
@@ -237,7 +324,10 @@
     "question": "Did anyone donate 50,000 PKR?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%50000%' AND text LIKE '%PKR%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["edge", "donation"]
+    "tags": [
+      "edge",
+      "donation"
+    ]
   },
   {
     "id": "H1",
@@ -245,7 +335,10 @@
     "question": "Has a hamster or iguana ever been treated at this clinic?",
     "gold_sql": "SELECT * FROM raw_messages WHERE (text LIKE '%hamster%' OR text LIKE '%iguana%') AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
-    "tags": ["hallucination", "edge"]
+    "tags": [
+      "hallucination",
+      "edge"
+    ]
   },
   {
     "id": "H2",
@@ -253,7 +346,10 @@
     "question": "Was there any case of rabies reported in the clinic?",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%rabies%' AND chat_name LIKE 'TEST_%'",
     "expected_min_rows": 0,
-    "tags": ["hallucination", "edge"]
+    "tags": [
+      "hallucination",
+      "edge"
+    ]
   },
   {
     "id": "RT1",
@@ -262,7 +358,10 @@
     "expected_tool": "query_to_inline_table",
     "gold_sql": "SELECT * FROM raw_messages WHERE text LIKE '%PKR%' AND timestamp LIKE '2026-06%'",
     "expected_min_rows": 1,
-    "tags": ["routing", "inline-table"]
+    "tags": [
+      "routing",
+      "inline-table"
+    ]
   },
   {
     "id": "RT2",
@@ -271,7 +370,10 @@
     "expected_tool": "query_to_inline_table",
     "gold_sql": "SELECT * FROM raw_messages WHERE chat_name LIKE 'TEST_%'",
     "expected_min_rows": 1,
-    "tags": ["routing", "inline-table"]
+    "tags": [
+      "routing",
+      "inline-table"
+    ]
   },
   {
     "id": "RT3",
@@ -280,7 +382,10 @@
     "expected_tool": "generate_static_report",
     "gold_sql": "SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE timestamp LIKE '2026-03-27%' ORDER BY timestamp",
     "expected_min_rows": 1,
-    "tags": ["routing", "static-report"]
+    "tags": [
+      "routing",
+      "static-report"
+    ]
   },
   {
     "id": "RT4",
@@ -289,7 +394,10 @@
     "expected_tool": "generate_static_report",
     "gold_sql": "SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%PKR%' OR text LIKE '%donation%' OR text LIKE '%donated%' ORDER BY timestamp",
     "expected_min_rows": 1,
-    "tags": ["routing", "static-report"]
+    "tags": [
+      "routing",
+      "static-report"
+    ]
   },
   {
     "id": "RT5",
@@ -298,7 +406,10 @@
     "expected_tool": "generate_dynamic_report",
     "gold_sql": "SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Rocky%' ORDER BY timestamp",
     "expected_min_rows": 1,
-    "tags": ["routing", "dynamic-report"]
+    "tags": [
+      "routing",
+      "dynamic-report"
+    ]
   },
   {
     "id": "RT6",
@@ -307,6 +418,109 @@
     "expected_tool": "generate_dynamic_report",
     "gold_sql": "SELECT chat_name, sender, text, timestamp FROM raw_messages WHERE text LIKE '%Oreo%' ORDER BY timestamp",
     "expected_min_rows": 1,
-    "tags": ["routing", "dynamic-report"]
+    "tags": [
+      "routing",
+      "dynamic-report"
+    ]
+  },
+  {
+    "id": "TQ-021",
+    "difficulty": "hard",
+    "question": "Generate a static 'donation_ledger' report for all donations received on June 3rd, 2026.",
+    "gold_report": "tests/ground_truth_reports/GT_Q21_donation_ledger.md",
+    "tags": [
+      "report",
+      "static"
+    ]
+  },
+  {
+    "id": "TQ-022",
+    "difficulty": "hard",
+    "question": "Generate a static 'treatment_log' report for Daisy (Cat) containing all her checkups.",
+    "gold_report": "tests/ground_truth_reports/GT_Q22_daisy_treatment.md",
+    "tags": [
+      "report",
+      "static"
+    ]
+  },
+  {
+    "id": "TQ-023",
+    "difficulty": "hard",
+    "question": "Generate a static 'attendance_sheet' report showing all attendance logs for the sender '+92 300 1234567'.",
+    "gold_report": "tests/ground_truth_reports/GT_Q23_attendance_sheet.md",
+    "tags": [
+      "report",
+      "static"
+    ]
+  },
+  {
+    "id": "TQ-024",
+    "difficulty": "hard",
+    "question": "Generate a static 'treatment_log' report for all Parvo treatment cases.",
+    "gold_report": "tests/ground_truth_reports/GT_Q24_parvo_log.md",
+    "tags": [
+      "report",
+      "static"
+    ]
+  },
+  {
+    "id": "TQ-025",
+    "difficulty": "hard",
+    "question": "Generate a static 'treatment_log' report for all Rabies vaccine cases.",
+    "gold_report": "tests/ground_truth_reports/GT_Q25_rabies_log.md",
+    "tags": [
+      "report",
+      "static"
+    ]
+  },
+  {
+    "id": "TQ-026",
+    "difficulty": "hard",
+    "question": "Generate a dynamic report titled 'Ms. Fatima Donation Summary' summarizing all her donations and what they were for.",
+    "gold_report": "tests/ground_truth_reports/GT_Q26_fatima_dynamic.md",
+    "tags": [
+      "report",
+      "dynamic"
+    ]
+  },
+  {
+    "id": "TQ-027",
+    "difficulty": "hard",
+    "question": "Generate a dynamic report titled 'JDC Foundation Summary' summarizing their corporate sponsorships and what they were for.",
+    "gold_report": "tests/ground_truth_reports/GT_Q27_jdc_dynamic.md",
+    "tags": [
+      "report",
+      "dynamic"
+    ]
+  },
+  {
+    "id": "TQ-028",
+    "difficulty": "hard",
+    "question": "Generate a dynamic report titled 'Anonymous Donors Summary' listing all the anonymous donations of PKR 50,000 or greater.",
+    "gold_report": "tests/ground_truth_reports/GT_Q28_anon_dynamic.md",
+    "tags": [
+      "report",
+      "dynamic"
+    ]
+  },
+  {
+    "id": "TQ-029",
+    "difficulty": "hard",
+    "question": "Generate a static 'donation_ledger' report specifically for all blanket donations.",
+    "gold_report": "tests/ground_truth_reports/GT_Q29_blankets_ledger.md",
+    "tags": [
+      "report",
+      "static"
+    ]
+  },
+  {
+    "id": "TQ-030",
+    "difficulty": "hard",
+    "question": "Generate a dynamic report titled 'Attendance Irregularities' highlighting all messages where a sender mentioned 'traffic' or leaving early.",
+    "gold_report": "tests/ground_truth_reports/GT_Q30_attendance_dynamic.md",
+    "tags": [
+      "report",
+      "dynamic"
+    ]
   }
 ]

@@ -414,20 +414,22 @@ def query_to_inline_table(query: str, title: str = "Query Results") -> str:
 
 
 @tool
-<<<<<<< HEAD
 def execute_python_analytics(query: str, python_script: str) -> str:
     """
     Execute a SQLite query and pass the resulting rows to a custom Python script for analysis.
-    
-    Use this when you need to parse unstructured text (like extracting names, counting occurrences of irregular patterns, etc.) 
+
+    Use this when you need to parse unstructured text (like extracting names, counting occurrences of irregular patterns, etc.)
     where SQLite's GROUP BY fails and simple Regex isn't enough.
-    
+
     The tool will:
     1. Run your `query` against the database.
     2. Expose the results to your `python_script` as a list of dictionaries named `rows`.
        Example `rows`: [{"id": 1, "text": "Daisy (Goat) treated"}, {"id": 2, "text": "JDC Foundation donated"}]
     3. Run your script. Any text you `print()` in your script will be returned to you.
-    
+
+    SECURITY: SQL is validated (SELECT-only, raw_messages table only). Python sandbox
+    restricts modules and blocks file/network access.
+
     Args:
         query: The SQL query to fetch the data (e.g. "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%'").
         python_script: The Python code to process the `rows` variable. Must use `print()` to output the result.
@@ -437,81 +439,105 @@ def execute_python_analytics(query: str, python_script: str) -> str:
                 text = row['text']
                 if 'JDC' in text: counts['JDC Foundation'] = counts.get('JDC Foundation', 0) + 1
                 elif 'Saylani' in text: counts['Saylani Trust'] = counts.get('Saylani Trust', 0) + 1
-            
+
             for k, v in sorted(counts.items(), key=lambda x: x[1], reverse=True)[:5]:
                 print(f"{k}: {v}")
     """
+    import io, contextlib
+
+    # Guardrail: Validate SQL before execution
+    validation_error = _validate_sql(query)
+    if validation_error:
+        return validation_error
+
+    # Guardrail: Sanitize Python script before execution
+    sanitization_error = _sanitize_python_script(python_script)
+    if sanitization_error:
+        return sanitization_error
+
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row
     try:
         cursor = connection.cursor()
         cursor.execute(query)
         fetched_rows = cursor.fetchall()
-        
+
         # Convert sqlite3.Row to standard dict for the script
         rows = [dict(row) for row in fetched_rows]
-        
-        # Set up a sandbox environment with the `rows` variable injected
-        local_env = {"rows": rows, "re": __import__("re"), "Counter": __import__("collections").Counter}
-        
-        # Capture stdout
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
+
+        # Build restricted sandbox environment
+        import re as _re
+        import collections as _collections
+        import json as _json
+        import math as _math
+        import datetime as _datetime
+        import itertools as _itertools
+        import statistics as _statistics
+        import functools as _functools
+        import operator as _operator
+        import string as _string
+        import textwrap as _textwrap
+        import typing as _typing
+        import decimal as _decimal
+        import fractions as _fractions
+        import numbers as _numbers
+        import hashlib as _hashlib
+        import copy as _copy
+        import pprint as _pprint
+        import csv as _csv
+
+        _output_buffer = []
+        def _safe_print(*args, **kwargs):
+            _output_buffer.append(" ".join(str(a) for a in args))
+
+        local_env = {
+            "rows": rows,
+            "re": _re,
+            "Counter": _collections.Counter,
+            "collections": _collections,
+            "json": _json,
+            "math": _math,
+            "datetime": _datetime,
+            "itertools": _itertools,
+            "statistics": _statistics,
+            "functools": _functools,
+            "operator": _operator,
+            "string": _string,
+            "textwrap": _textwrap,
+            "typing": _typing,
+            "decimal": _decimal,
+            "fractions": _fractions,
+            "numbers": _numbers,
+            "hashlib": _hashlib,
+            "copy": _copy,
+            "pprint": _pprint,
+            "csv": _csv,
+            "print": _safe_print,
+        }
+
+        safe_builtins = {}
+        import builtins as _builtins
+        for name in dir(_builtins):
+            if name not in PYTHON_BLOCKED_BUILTINS and not name.startswith("_"):
+                safe_builtins[name] = getattr(_builtins, name)
+        safe_builtins["__import__"] = _restricted_import
+        local_env["__builtins__"] = safe_builtins
+
+        _output_buffer.clear()
+        with contextlib.redirect_stdout(io.StringIO()):
             try:
                 exec(python_script, {}, local_env)
             except Exception as e:
                 return f"Python Script Error: {e}"
-        
-        output = f.getvalue()
+
+        output = "\n".join(_output_buffer)
         if not output.strip():
             return "The script executed successfully but printed nothing. Make sure to use print()."
+
+        # Guardrail: Redact credentials from output
+        output = _redact_credentials(output)
         return output
     except Exception as e:
         return f"Database Error: {e}"
     finally:
         connection.close()
-=======
-def execute_python_script(python_script: str) -> str:
-    """
-    Execute a python script in a sandbox environment.
-    Use this to run complex pandas data analysis directly against the SQLite database.
-    You must use print() to output the final answer.
-    
-    Example script:
-    import sqlite3
-    import pandas as pd
-    import re
-    
-    conn = sqlite3.connect('data/vetlog.db')
-    df = pd.read_sql_query("SELECT text FROM raw_messages WHERE chat_name LIKE '%Donation%'", conn)
-    
-    total = 0
-    for text in df['text']:
-        match = re.search(r'PKR\s*(\d+)', str(text))
-        if match:
-            total += int(match.group(1))
-            
-    print(f"Total: PKR {total}")
-    """
-    import io, contextlib
-    
-    try:
-        import pandas as pd
-    except ImportError:
-        pd = None
-        
-    local_env = {"pd": pd, "re": __import__("re"), "sqlite3": __import__("sqlite3")}
-    
-    f = io.StringIO()
-    with contextlib.redirect_stdout(f):
-        try:
-            # Pass local_env as BOTH globals and locals so lambdas work properly
-            exec(python_script, local_env, local_env)
-        except Exception as e:
-            return f"Python Script Error: {e}"
-    
-    output = f.getvalue()
-    if not output.strip():
-        return "The script executed successfully but printed nothing. Make sure to use print()."
-    return output
->>>>>>> 62ad95b (agent is not getting stuck at loops now)
