@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { MessageCirclePlus, MessageSquare, Settings, CircleUserRound, LogOut, PanelLeftClose, PanelLeftOpen, Cat } from "lucide-react";
+import appLogo from "../assets/logo.png";
 import { motion } from "framer-motion";
 import * as Popover from "@radix-ui/react-popover";
 import "./Sidebar.css";
@@ -77,7 +78,7 @@ export default function Sidebar({ isOpen, onToggle, onNewChat, isNewChatDisabled
             {isOpen && (
               <div className="sidebar-brand">
                 <span className="sidebar-brand-mark">
-                  <Cat size={22} strokeWidth={2.25} />
+                  <img src={appLogo} alt="Vetlog" style={{ width: 32, height: 32, objectFit: "contain", transform: "scale(1.7)" }} />
                 </span>
                 <span className="sidebar-wordmark">Vetlog AI</span>
               </div>

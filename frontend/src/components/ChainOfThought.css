@@ -1,0 +1,117 @@
+.chain-of-thought-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: var(--space-2) 0;
+}
+
+.chain-of-thought-step {
+  display: flex;
+  position: relative;
+}
+
+.chain-of-thought-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 16px;
+  margin-right: var(--space-2);
+  flex-shrink: 0;
+}
+
+.chain-of-thought-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  margin-top: 10px; /* Aligns visually with the middle of the trigger text */
+  flex-shrink: 0;
+}
+
+.chain-of-thought-line {
+  width: 1px;
+  background: var(--color-border-strong);
+  flex-grow: 1;
+  margin-top: 4px;
+  margin-bottom: -8px; /* Extend into the next step */
+}
+
+/* Hide the connecting line on the last step */
+.chain-of-thought-step:last-child .chain-of-thought-line {
+  display: none;
+}
+
+.chain-of-thought-content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* prevent overflow */
+  padding-bottom: var(--space-2);
+}
+
+.chain-of-thought-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-align: left;
+}
+
+.chain-of-thought-trigger:hover {
+  color: var(--color-text);
+}
+
+.chain-of-thought-trigger-text {
+  flex-shrink: 0;
+}
+
+.chain-of-thought-icon {
+  color: var(--color-text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chain-of-thought-icon.open {
+  transform: rotate(180deg);
+}
+
+.chain-of-thought-content-wrapper {
+  overflow: hidden;
+}
+
+.chain-of-thought-content {
+  padding: var(--space-1) 0 var(--space-2) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.chain-of-thought-item {
+  color: var(--color-text-faint);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--color-border-subtle);
+  margin-left: var(--space-1);
+}
+
+.chain-of-thought-item-text {
+  word-break: break-word;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin {
+  animation: spin 1s linear infinite;
+}

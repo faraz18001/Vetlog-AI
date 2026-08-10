@@ -49,16 +49,16 @@ export default {
         "base": "8px"
       },
       "fontFamily": {
-        "headline-md": ["DM Sans", "sans-serif"],
-        "body-lg": ["Nunito Sans", "sans-serif"],
-        "headline-lg-mobile": ["DM Sans", "sans-serif"],
-        "headline-lg": ["DM Sans", "sans-serif"],
-        "display-lg": ["DM Sans", "sans-serif"],
-        "label-md": ["Nunito Sans", "sans-serif"],
-        "label-sm": ["Nunito Sans", "sans-serif"],
-        "body-md": ["Nunito Sans", "sans-serif"],
-        "display": ["DM Sans", "sans-serif"],
-        "body": ["Nunito Sans", "sans-serif"]
+        "headline-md": ["var(--font-display)", "sans-serif"],
+        "body-lg": ["var(--font-body)", "sans-serif"],
+        "headline-lg-mobile": ["var(--font-display)", "sans-serif"],
+        "headline-lg": ["var(--font-display)", "sans-serif"],
+        "display-lg": ["var(--font-display)", "sans-serif"],
+        "label-md": ["var(--font-body)", "sans-serif"],
+        "label-sm": ["var(--font-body)", "sans-serif"],
+        "body-md": ["var(--font-body)", "sans-serif"],
+        "display": ["var(--font-display)", "sans-serif"],
+        "body": ["var(--font-body)", "sans-serif"]
       },
       "fontSize": {
         "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],

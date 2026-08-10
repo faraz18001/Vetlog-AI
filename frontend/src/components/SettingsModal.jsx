@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, RefreshCw } from "lucide-react";
 import "./SettingsModal.css";
+import CustomSelect from "./CustomSelect";
 
 function authHeader(user) {
   if (!user || !user.token) return {};
@@ -217,13 +218,12 @@ export default function SettingsModal({ isOpen, onClose, user }) {
 
                   <div className="form-group">
                     <label htmlFor="provider">LLM Provider</label>
-                    <select
+                    <CustomSelect
                       id="provider"
                       value={provider}
                       onChange={function (e) {
                         var newProv = e.target.value;
                         var oldProv = provider;
-                        // Save drafts for the provider we're leaving
                         if (oldProv !== newProv) {
                           var updatedDraftKeys = {};
                           for (var k in draftKeys) updatedDraftKeys[k] = draftKeys[k];
@@ -233,27 +233,17 @@ export default function SettingsModal({ isOpen, onClose, user }) {
                           updatedDraftModels[oldProv] = model;
                           setDraftKeys(updatedDraftKeys);
                           setDraftModels(updatedDraftModels);
-                          // Restore drafts for the provider we're switching to
                           setApiKey(updatedDraftKeys[newProv] || "");
                           setModel(updatedDraftModels[newProv] || "");
                         }
                         setProvider(newProv);
                         setModels([]);
                       }}
-                      className="form-input"
-                    >
-                      {providers.length === 0 && (
-                        <option value="ollama">Ollama</option>
-                      )}
-                      {providers.map(function (p) {
-                        var isConfigured = configuredProviders.indexOf(p.id) !== -1;
-                        return (
-                          <option key={p.id} value={p.id}>
-                            {p.name}{isConfigured ? " \u2713" : ""}
-                          </option>
-                        );
-                      })}
-                    </select>
+                      options={providers.length === 0 ? [{value: 'ollama', label: 'Ollama'}] : providers.map(p => ({
+                        value: p.id,
+                        label: p.name + (configuredProviders.indexOf(p.id) !== -1 ? " \u2713" : "")
+                      }))}
+                    />
                   </div>
 
                   <div className="form-group">
@@ -264,24 +254,15 @@ export default function SettingsModal({ isOpen, onClose, user }) {
                           Loading models...
                         </div>
                       ) : models.length > 0 ? (
-                        <select
-                          id="model"
-                          value={model}
-                          onChange={function (e) { setModel(e.target.value); }}
-                          className="form-input"
-                          required
-                        >
-                          {model === "" && (
-                            <option value="">-- Select a model --</option>
-                          )}
-                          {modelOptions.map(function (opt) {
-                            return (
-                              <option key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </option>
-                            );
-                          })}
-                        </select>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <CustomSelect
+                            id="model"
+                            value={model}
+                            onChange={function (e) { setModel(e.target.value); }}
+                            placeholder="-- Select a model --"
+                            options={modelOptions}
+                          />
+                        </div>
                       ) : (
                         <input
                           type="text"

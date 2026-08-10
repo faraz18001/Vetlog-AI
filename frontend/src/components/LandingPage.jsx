@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Cat, UserRound, ArrowUp, ArrowRight, MessageSquare, BarChart3, Stethoscope, RefreshCcw, Database, FlaskConical, Building, Cloud } from 'lucide-react';
 import './LandingPage.css';
 import pusheenCat from '../assets/pusheen.png';
+import appLogo from '../assets/logo.png';
 import pusheenDoc from '../assets/pusheen-doc.png';
 import openaiIcon from '../assets/openai.svg';
 import geminiIcon from '../assets/gemini.svg';
@@ -135,7 +136,7 @@ const HeroChatMockup = () => {
             {/* Topbar */}
             <div className="h-[56px] px-6 border-b border-outline-variant/50 flex items-center justify-between shrink-0" style={{ background: 'linear-gradient(180deg, var(--color-surface) 0%, color-mix(in oklch, var(--color-surface) 60%, var(--color-paper)) 100%)' }}>
                 <div className="flex items-center gap-2">
-                    <Cat size={20} className="text-primary" strokeWidth={2.25} />
+                    <img src={appLogo} alt="Vetlog" style={{ width: 28, height: 28, objectFit: "contain", transform: "scale(1.5)" }} />
                     <span className="font-display font-semibold text-on-surface tracking-tight">Vetlog AI</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-on-surface-variant bg-surface-container-low border border-outline-variant rounded-md px-3 py-1">
@@ -161,7 +162,7 @@ const HeroChatMockup = () => {
                 {step >= 2 && (
                     <div className="flex items-start gap-3 animate-slide-up-fade">
                         <div className="w-[22px] h-[22px] rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0 mt-[2px]">
-                            <Cat size={14} strokeWidth={2.25} />
+                            <img src={appLogo} alt="Vetlog" style={{ width: 20, height: 20, objectFit: "contain", transform: "scale(1.5)" }} />
                         </div>
                         <div className="text-on-surface text-base leading-[1.75] w-full">
                             {step === 2 ? (
@@ -225,7 +226,7 @@ export default function LandingPage() {
             {/* Floating Pill Nav */}
             <nav className="fixed top-6 left-0 right-0 mx-auto z-50 w-[90%] max-w-5xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 rounded-full px-6 py-3 flex items-center justify-between shadow-lg" id="main-nav">
                 <div className="flex items-center gap-sm">
-                    <Cat className="text-primary w-6 h-6" strokeWidth={2.25} />
+                    <img src={appLogo} alt="Vetlog" style={{ width: 24, height: 24, objectFit: "contain", transform: "scale(1.5)" }} />
                     <span className="font-headline-md text-body-lg font-bold text-primary">Vetlog-AI</span>
                 </div>
                 <div className="hidden md:flex items-center gap-lg">

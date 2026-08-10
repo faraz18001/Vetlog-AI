@@ -1,11 +1,18 @@
 import { memo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Cat, Check, Copy, UserRound } from "lucide-react";
+import { Cat, Check, Copy, UserRound, Loader2 } from "lucide-react";
+import appLogo from "../assets/logo.png";
 import { motion } from "framer-motion";
 import ReportCard from "./ReportCard.jsx";
 import InlineTableCard from "./InlineTableCard.jsx";
-import StepChain from "./StepChain.jsx";
+import {
+  ChainOfThought,
+  ChainOfThoughtStep,
+  ChainOfThoughtTrigger,
+  ChainOfThoughtContent,
+  ChainOfThoughtItem
+} from "./ChainOfThought.jsx";
 
 function fmt(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
@@ -88,7 +95,7 @@ function MessageBubble({ message }) {
         {isUser ? (
           <UserRound size={12} strokeWidth={2.5} />
         ) : (
-          <Cat size={17} strokeWidth={2.25} />
+          <img src={appLogo} alt="AI" style={{ width: "100%", height: "100%", objectFit: "contain", transform: "scale(1.7)" }} />
         )}
       </div>
 
@@ -96,6 +103,38 @@ function MessageBubble({ message }) {
       <div
         className={`msg-bubble ${isUser ? "msg-bubble--user" : "msg-bubble--ai"}`}
       >
+        {/* ChainOfThought — shown for AI messages that triggered tool calls, or initially while thinking */}
+        {!isUser && (steps?.length > 0 || (isStreaming && !content)) && (
+          <ChainOfThought>
+            {(steps ?? []).map((step, i) => (
+              <ChainOfThoughtStep key={i} defaultOpen={isStreaming && i === (steps ?? []).length - 1}>
+                <ChainOfThoughtTrigger>
+                  {step.label}
+                </ChainOfThoughtTrigger>
+                {step.detail && (
+                  <ChainOfThoughtContent>
+                    <ChainOfThoughtItem>
+                      {step.detail}
+                    </ChainOfThoughtItem>
+                  </ChainOfThoughtContent>
+                )}
+              </ChainOfThoughtStep>
+            ))}
+            {isStreaming && (
+              <div className="chain-of-thought-step">
+                <div className="chain-of-thought-timeline">
+                  <div className="chain-of-thought-dot" style={{ display: 'none' }} />
+                  <Loader2 size={14} className="spin" style={{ color: 'var(--color-accent)', marginTop: '8px' }} />
+                </div>
+                <div className="chain-of-thought-trigger" style={{ cursor: 'default' }}>
+                  <span className="chain-of-thought-trigger-text" style={{ color: 'var(--color-text-muted)' }}>Thinking...</span>
+                </div>
+              </div>
+            )}
+          </ChainOfThought>
+        )}
+
+        
         {/* Content */}
         {(content || isUser || isError) ? (
           <div
@@ -124,11 +163,6 @@ function MessageBubble({ message }) {
           <span className="msg-ts" aria-hidden="true">
             {timeLabel}
           </span>
-        )}
-
-        {/* Step chain — shown for AI messages that triggered tool calls, or initially while thinking */}
-        {!isUser && (steps?.length > 0 || (isStreaming && !content)) && (
-          <StepChain steps={steps ?? []} isStreaming={isStreaming} />
         )}
 
         {/* Report card — shown when the agent generated a report this turn */}

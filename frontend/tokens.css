@@ -42,8 +42,8 @@
     --color-error-subtle: oklch(60% 0.22 25 / 0.12);
 
     /* ---- Typography ---- */
-    --font-display: "DM Sans", sans-serif;
-    --font-body: "Nunito Sans", sans-serif;
+    --font-display: "Quicksand", "Nunito", sans-serif;
+    --font-body: "Nunito", sans-serif;
     --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
 
     /* ---- Type scale ---- */

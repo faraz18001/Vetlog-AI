@@ -59,7 +59,7 @@
 }
 
 .sidebar-wordmark {
-  font-family: "Outfit", sans-serif;
+  font-family: var(--font-display);
   font-weight: 500;
   font-size: 1.1rem;
   color: var(--color-text);

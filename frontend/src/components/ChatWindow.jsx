@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Cat } from "lucide-react";
+import appLogo from "../assets/logo.png";
 import MessageBubble from "./MessageBubble.jsx";
 
 const SUGGESTED = [
@@ -20,7 +21,7 @@ function EmptyState({ onPrompt }) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", bounce: 0, duration: 0.5 }}
       >
-        <Cat size={32} strokeWidth={1.75} />
+        <img src={appLogo} alt="Vetlog AI" style={{ width: 64, height: 64, objectFit: "contain", transform: "scale(1.5)" }} />
       </motion.div>
 
       <motion.h1
