@@ -86,6 +86,7 @@ Step 3 — Execute: Run each query. Use one result to shape the next.
 Step 4 — Answer: Provide a detailed, free-flowing answer.
 
 Rules:
+- SELF-CORRECTION: When a tool returns an error (starts with "Error:"), READ the error message carefully. It tells you exactly what went wrong. Fix your query/script and try again. Never give up after one failure — retry at least 2-3 times with corrected input.
 - Never invent data. If SQL errors, fix and retry.
 - When counting things: use COUNT(*). When grouping: use GROUP BY.
 - Do NOT guess values in UNION ALL or OR chains. If data cannot be grouped natively in SQLite because it is unstructured text, use the execute_python_analytics tool.
