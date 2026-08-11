@@ -1,0 +1,374 @@
+[
+  {
+    "id": "T1_01",
+    "difficulty": "easy",
+    "question": "How many times was Charlie treated for parvovirus?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%Charlie%' AND text LIKE '%parvovirus%'",
+    "expected_answer": "2",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T1_02",
+    "difficulty": "easy",
+    "question": "How many rabies vaccines were administered?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%rabies%'",
+    "expected_answer": "79",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T1_03",
+    "difficulty": "easy",
+    "question": "How many fracture cases were recorded?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%fracture%'",
+    "expected_answer": "53",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T1_04",
+    "difficulty": "easy",
+    "question": "How many times did Rocky visit the clinic?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%Rocky%'",
+    "expected_answer": "54",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T1_05",
+    "difficulty": "easy",
+    "question": "How many treatments did Daisy (cat) receive?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%Daisy%'",
+    "expected_answer": "48",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T1_06",
+    "difficulty": "easy",
+    "question": "How many parvovirus cases were there in total?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND (text LIKE '%parvo%' OR text LIKE '%parvovirus%')",
+    "expected_answer": "138",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T1_07",
+    "difficulty": "easy",
+    "question": "How many clinical records mention Dr. Faraz?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%Faraz%'",
+    "expected_answer": "102",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "staff"]
+  },
+  {
+    "id": "T1_08",
+    "difficulty": "easy",
+    "question": "How many skin infection cases were treated?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND (text LIKE '%skin infection%' OR text LIKE '%fungal%' OR text LIKE '%mange%')",
+    "expected_answer": "116",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T1_09",
+    "difficulty": "easy",
+    "question": "How many animals were treated for vomiting?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%vomiting%'",
+    "expected_answer": "39",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T1_10",
+    "difficulty": "easy",
+    "question": "How many deworming treatments were done?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND text LIKE '%deworming%'",
+    "expected_answer": "36",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T2_01",
+    "difficulty": "medium",
+    "question": "What was the total donation amount in June 2026?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND timestamp BETWEEN '2026-06-01' AND '2026-06-30 23:59:59'",
+    "expected_answer": "1839000 PKR",
+    "expected_answer_type": "calculated_total",
+    "notes": "Must extract amounts with regex and sum them",
+    "tags": ["donations", "python_analytics", "aggregation"]
+  },
+  {
+    "id": "T2_02",
+    "difficulty": "medium",
+    "question": "How much did JDC Foundation donate in total?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND text LIKE '%JDC%'",
+    "expected_answer": "1172000 PKR",
+    "expected_answer_type": "calculated_total",
+    "notes": "JDC Foundation donated across multiple messages",
+    "tags": ["donations", "python_analytics", "aggregation"]
+  },
+  {
+    "id": "T2_03",
+    "difficulty": "medium",
+    "question": "What is the total amount from anonymous donations?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND (text LIKE '%Anonymous%' OR text LIKE '%anonymous%' OR text LIKE '%Walk-in%' OR text LIKE '%unknown donor%')",
+    "expected_answer": "1590000 PKR",
+    "expected_answer_type": "calculated_total",
+    "notes": "Sum of all anonymous/walk-in donations",
+    "tags": ["donations", "python_analytics", "filtering"]
+  },
+  {
+    "id": "T2_04",
+    "difficulty": "medium",
+    "question": "How many blanket donations were received and what is their total value?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND text LIKE '%blanket%'",
+    "expected_answer": "81 blanket donations totaling 1350000 PKR",
+    "expected_answer_type": "count_and_total",
+    "tags": ["donations", "python_analytics", "aggregation"]
+  },
+  {
+    "id": "T2_05",
+    "difficulty": "medium",
+    "question": "What was the total donation amount in March 2026?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND timestamp BETWEEN '2026-03-01' AND '2026-03-31 23:59:59'",
+    "expected_answer": "2094000 PKR",
+    "expected_answer_type": "calculated_total",
+    "tags": ["donations", "python_analytics", "aggregation"]
+  },
+  {
+    "id": "T2_06",
+    "difficulty": "medium",
+    "question": "Which month had the highest total donations between January and July 2026?",
+    "gold_sql": "SELECT text, timestamp FROM raw_messages WHERE chat_name LIKE '%Donations%' AND timestamp BETWEEN '2026-01-01' AND '2026-07-31 23:59:59'",
+    "expected_answer": "May 2026 with 2221000 PKR",
+    "expected_answer_type": "month_name",
+    "notes": "Requires extracting month from timestamp and summing amounts per month",
+    "tags": ["donations", "python_analytics", "comparison"]
+  },
+  {
+    "id": "T2_07",
+    "difficulty": "medium",
+    "question": "How many donations were received for vaccination drives?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Donations%' AND text LIKE '%vaccination%'",
+    "expected_answer": "78",
+    "expected_answer_type": "single_number",
+    "tags": ["donations", "count", "filtering"]
+  },
+  {
+    "id": "T2_08",
+    "difficulty": "medium",
+    "question": "What is the average donation amount for cash donations?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND text LIKE '%cash%'",
+    "expected_answer": "27094 PKR",
+    "expected_answer_type": "calculated_average",
+    "notes": "Extract amounts and calculate average",
+    "tags": ["donations", "python_analytics", "statistics"]
+  },
+  {
+    "id": "T2_09",
+    "difficulty": "medium",
+    "question": "How many donations exceeded PKR 50000?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND text LIKE '%PKR%'",
+    "expected_answer": "92",
+    "expected_answer_type": "count_from_text",
+    "notes": "Must parse amounts and count those > 50000",
+    "tags": ["donations", "python_analytics", "filtering"]
+  },
+  {
+    "id": "T2_10",
+    "difficulty": "medium",
+    "question": "Which donor gave the most number of donations?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%'",
+    "expected_answer": "Anonymous (91 donations)",
+    "expected_answer_type": "name_from_text",
+    "notes": "Parse donor names and count frequency",
+    "tags": ["donations", "python_analytics", "frequency"]
+  },
+  {
+    "id": "T2_11",
+    "difficulty": "medium",
+    "question": "How many staff members were on duty at least once?",
+    "gold_sql": "SELECT DISTINCT sender FROM raw_messages WHERE chat_name LIKE '%Attendance%' AND text LIKE '%on duty%'",
+    "expected_answer": "26",
+    "expected_answer_type": "count_distinct",
+    "tags": ["attendance", "count"]
+  },
+  {
+    "id": "T2_12",
+    "difficulty": "medium",
+    "question": "How many times was staff late in February 2026?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Attendance%' AND text LIKE '%late%' AND timestamp BETWEEN '2026-02-01' AND '2026-02-28 23:59:59'",
+    "expected_answer": "19",
+    "expected_answer_type": "single_number",
+    "tags": ["attendance", "count", "date_filter"]
+  },
+  {
+    "id": "T2_13",
+    "difficulty": "medium",
+    "question": "Which staff member had the most leave requests?",
+    "gold_sql": "SELECT sender FROM raw_messages WHERE chat_name LIKE '%Attendance%' AND (text LIKE '%leave%' OR text LIKE '%absent%')",
+    "expected_answer": "Sana (across all name variants: Sana, Manager Sana, Sana Iqbal) with 34+34+34 = 102",
+    "expected_answer_type": "name_from_frequency",
+    "notes": "Count leave/absent mentions per sender, normalize name variants",
+    "tags": ["attendance", "python_analytics", "frequency"]
+  },
+  {
+    "id": "T2_14",
+    "difficulty": "medium",
+    "question": "How many emergency fund donations were received?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Donations%' AND text LIKE '%emergency%'",
+    "expected_answer": "82",
+    "expected_answer_type": "single_number",
+    "tags": ["donations", "count", "filtering"]
+  },
+  {
+    "id": "T2_15",
+    "difficulty": "medium",
+    "question": "What is the total expense on medicines?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Expenses%' AND (text LIKE '%dawa%' OR text LIKE '%medicine%' OR text LIKE '%antibiotic%' OR text LIKE '%vaccine%')",
+    "expected_answer": "2214500 PKR",
+    "expected_answer_type": "calculated_total",
+    "notes": "Sum amounts from expense messages mentioning medicine",
+    "tags": ["expenses", "python_analytics", "aggregation"]
+  },
+  {
+    "id": "T2_16",
+    "difficulty": "medium",
+    "question": "How many rescue operations were reported?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%General%' AND text LIKE '%rescue%'",
+    "expected_answer": "126",
+    "expected_answer_type": "single_number",
+    "tags": ["general", "count"]
+  },
+  {
+    "id": "T2_17",
+    "difficulty": "medium",
+    "question": "How many times was the clinic AC repaired?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE (chat_name LIKE '%Expenses%' OR chat_name LIKE '%General%') AND text LIKE '%AC%' AND text LIKE '%repair%'",
+    "expected_answer": "26",
+    "expected_answer_type": "single_number",
+    "tags": ["expenses", "count"]
+  },
+  {
+    "id": "T2_18",
+    "difficulty": "medium",
+    "question": "Which animal was treated the most number of times?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Clinical%'",
+    "expected_answer": "Rocky with 54 visits",
+    "expected_answer_type": "name_and_count",
+    "notes": "Count mentions of each animal name",
+    "tags": ["clinical", "python_analytics", "frequency"]
+  },
+  {
+    "id": "T2_19",
+    "difficulty": "medium",
+    "question": "How many dogs were treated versus cats?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Clinical%'",
+    "expected_answer": "237 dogs vs 178 cats",
+    "expected_answer_type": "comparison",
+    "notes": "Count species mentions (dog vs cat)",
+    "tags": ["clinical", "python_analytics", "comparison"]
+  },
+  {
+    "id": "T2_20",
+    "difficulty": "medium",
+    "question": "What was the largest single donation amount?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%'",
+    "expected_answer": "100000 PKR",
+    "expected_answer_type": "max_from_text",
+    "notes": "Find maximum amount across all donation messages",
+    "tags": ["donations", "python_analytics", "statistics"]
+  },
+  {
+    "id": "T3_01",
+    "difficulty": "hard",
+    "question": "Calculate the total donations from March to May 2026, broken down by month.",
+    "gold_sql": "SELECT text, timestamp FROM raw_messages WHERE chat_name LIKE '%Donations%' AND timestamp BETWEEN '2026-03-01' AND '2026-05-31 23:59:59'",
+    "expected_answer_type": "monthly_breakdown",
+    "notes": "Extract month from timestamp, parse amounts, group by month",
+    "tags": ["donations", "python_analytics", "multi_step"]
+  },
+  {
+    "id": "T3_02",
+    "difficulty": "hard",
+    "question": "Which doctor treated the most animals and how many?",
+    "gold_sql": "SELECT sender FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND (text LIKE '%Dr.%' OR text LIKE '%doctor%' OR text LIKE '%treated%')",
+    "expected_answer_type": "name_and_count",
+    "notes": "Count treatments per doctor, normalize name variants",
+    "tags": ["clinical", "python_analytics", "normalization"]
+  },
+  {
+    "id": "T3_03",
+    "difficulty": "hard",
+    "question": "What percentage of donations were for animal feed?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%'",
+    "expected_answer_type": "percentage",
+    "notes": "Total donations vs animal feed donations",
+    "tags": ["donations", "python_analytics", "percentage"]
+  },
+  {
+    "id": "T3_04",
+    "difficulty": "hard",
+    "question": "List all animals that were treated for more than one condition.",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Clinical%'",
+    "expected_answer_type": "list_from_text",
+    "notes": "Group by animal, count distinct conditions",
+    "tags": ["clinical", "python_analytics", "grouping"]
+  },
+  {
+    "id": "T3_05",
+    "difficulty": "hard",
+    "question": "What was the total clinic expense on staff salaries in 2026?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Expenses%' AND (text LIKE '%salary%' OR text LIKE '%staff%')",
+    "expected_answer_type": "calculated_total",
+    "notes": "Sum of all salary-related expenses. Exact amount depends on regex matching.",
+    "tags": ["expenses", "python_analytics", "aggregation"]
+  },
+  {
+    "id": "T3_06",
+    "difficulty": "hard",
+    "question": "Which week in July 2026 had the most treatments?",
+    "gold_sql": "SELECT text, timestamp FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND timestamp BETWEEN '2026-07-01' AND '2026-07-31 23:59:59'",
+    "expected_answer_type": "week_identifier",
+    "notes": "Parse dates, group by week, find max",
+    "tags": ["clinical", "python_analytics", "date_analysis"]
+  },
+  {
+    "id": "T3_07",
+    "difficulty": "hard",
+    "question": "Compare the average donation from named donors versus anonymous donors.",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%'",
+    "expected_answer_type": "comparison",
+    "notes": "Split donations into named vs anonymous, calculate averages",
+    "tags": ["donations", "python_analytics", "comparison"]
+  },
+  {
+    "id": "T3_08",
+    "difficulty": "hard",
+    "question": "How many animals were treated for tick fever or leptospirosis?",
+    "gold_sql": "SELECT COUNT(*) FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND (text LIKE '%tick fever%' OR text LIKE '%leptospirosis%')",
+    "expected_answer": "80",
+    "expected_answer_type": "single_number",
+    "tags": ["clinical", "count"]
+  },
+  {
+    "id": "T3_09",
+    "difficulty": "hard",
+    "question": "Generate a donation ledger report for June 2026.",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND timestamp BETWEEN '2026-06-01' AND '2026-06-30 23:59:59'",
+    "expected_answer_type": "report_generation",
+    "notes": "Should trigger generate_static_report or generate_dynamic_report",
+    "tags": ["donations", "report_generation"]
+  },
+  {
+    "id": "T3_10",
+    "difficulty": "hard",
+    "question": "What is the total value of all blanket donations from anonymous sources?",
+    "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND text LIKE '%blanket%' AND (text LIKE '%Anonymous%' OR text LIKE '%Walk-in%' OR text LIKE '%unknown%')",
+    "expected_answer_type": "calculated_total",
+    "notes": "Multiple filters + amount extraction",
+    "tags": ["donations", "python_analytics", "multi_filter"]
+  }
+]

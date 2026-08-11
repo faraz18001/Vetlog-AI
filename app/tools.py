@@ -594,6 +594,16 @@ def query_to_inline_table(query: str, title: str = "Query Results") -> str:
         connection.close()
 
 
+def _restricted_import(name, *args, **kwargs):
+    """Restricted import function that only allows whitelisted modules."""
+    base_module = name.split(".")[0]
+    if base_module not in PYTHON_ALLOWED_MODULES:
+        raise ImportError(f"Import of module '{name}' is not allowed in the sandbox.")
+    # Use the real __import__ from builtins to avoid recursion
+    import builtins as _original_builtins
+    return _original_builtins.__import__(name, *args, **kwargs)
+
+
 @tool
 def execute_python_analytics(query: str, python_script: str) -> str:
     """
@@ -707,7 +717,8 @@ def execute_python_analytics(query: str, python_script: str) -> str:
         _output_buffer.clear()
         with contextlib.redirect_stdout(io.StringIO()):
             try:
-                exec(python_script, {}, local_env)
+                # Put __builtins__ in globals so exec can find it
+                exec(python_script, {"__builtins__": safe_builtins}, local_env)
             except Exception as e:
                 return f"Python Script Error: {e}"
 
