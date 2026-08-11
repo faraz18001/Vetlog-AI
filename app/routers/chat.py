@@ -16,6 +16,105 @@ from app.schemas import AgentStep, ChatRequest, ChatResponse, TokenUsage, UsageS
 
 router = APIRouter(prefix="", tags=["chat"])
 
+# P2: Prompt injection patterns to strip from user messages
+INJECTION_PATTERNS = [
+    r"---\s*END\s+OF\s+(NEW\s+)?USER\s+MESSAGE\s*---",
+    r"---\s*BEGIN\s+SYSTEM\s+INSTRUCTION\s*---",
+    r"---\s*END\s+SYSTEM\s+INSTRUCTION\s*---",
+    r"---\s*BEGIN\s+NEW\s+INSTRUCTIONS?\s*---",
+    r"---\s*END\s+NEW\s+INSTRUCTIONS?\s*---",
+    r"IGNORE\s+(ALL\s+)?(PREVIOUS|ABOVE|Prior)\s+INSTRUCTIONS?",
+    r"YOU\s+ARE\s+NOW\s+A?\s+HELPFUL",
+    r"DISREGARD\s+(ALL\s+)?(PREVIOUS|ABOVE)\s+INSTRUCTIONS?",
+    r"FORGET\s+(ALL\s+)?(PREVIOUS|ABOVE)\s+INSTRUCTIONS?",
+    r"NEW\s+INSTRUCTIONS?\s*:",
+    r"SYSTEM\s+PROMPT\s*:",
+    r"OVERRIDE\s+INSTRUCTIONS?",
+    r"PROMPT\s+INJECTION",
+    r"AS\s+A?\s+DEVELOPER",
+    r"IN\s+THIS\s+NEW\s+MODE",
+    r"ASSUME\s+THE\s+ROLE\s+OF",
+    r"PRETEND\s+(YOU\s+ARE|TO\s+BE)",
+    r"ACT\s+AS\s+(A|IF)",
+]
+
+
+# P2: Malicious content patterns (detected after stripping injection markers)
+MALICIOUS_CONTENT_PATTERNS = [
+    # .env / credential file access (must be an action, not just a mention)
+    r"(print|show|output|display|reveal|dump|read|cat|echo|write)\s+(me\s+)?(the\s+)?(\.env|credentials?|api.?keys?|secrets?|tokens?)",
+    r"contents?\s+of\s+(the\s+)?\.env",
+    r"\.env\s+(contents?|file|data)",
+    r"(display|reveal|output|print|show|dump)\s+(the\s+)?(credentials?|api.?keys?|secrets?|tokens?)",
+    # System prompt extraction
+    r"reveal(s|ed|ing)?\s+(your|the|its)?\s*system\s+prompt",
+    r"reveal(s|ed|ing)?\s+(your|the|its)?\s*api\s+key",
+    r"reveal(s|ed|ing)?\s+(your|the|its)?\s*credentials?",
+    r"print\s+(your|the)\s+system\s+prompt",
+    r"show\s+(me\s+)?(your|the)\s+(api\s+key|credentials?|token)",
+    r"what\s+(is|are)\s+(your|the)\s+(api.?key|secret|token|password)",
+    r"system\s+prompt\s+(leak|reveal|dump)",
+    r"(your|the)\s+system\s+prompt\??$",
+    # Sensitive file access
+    r"access\s+(the\s+)?sensitive\s+files?",
+    r"read\s+(the\s+)?(config|configuration|credential)",
+    # Bypass attempts
+    r"bypass\s+(the\s+)?(security|guardrails?|restrictions?)",
+    r"ignore\s+(the\s+)?security\s+rules?",
+    r"override\s+(the\s+)?(security|restrictions?|guardrails?)",
+    r"disable\s+(the\s+)?(security|guardrails?)",
+    # Code execution attacks
+    r"execute\s+(a\s+)?(reverse\s+)?shell",
+    r"make\s+(an?\s+)?outbound\s+network\s+connection",
+    r"(reverse\s+)?shell\s+command",
+    # Data exfiltration framing
+    r"(verify|check)\s+(the\s+)?(integrity|validity)\s+of\s+(the\s+)?\.env",
+    r"(verify|check)\s+(the\s+)?api\s+keys?\s+(haven|have|has)\s+",
+    # Emergency/social engineering
+    r"(urgent|emergency)\s+(security\s+)?audit",
+    r"compromised.*\.env",
+    # Encoding-based injection
+    r"base64\s+(encoded?\s+)?(instruction|command|prompt)",
+    r"decode\s+(this|the)\s+base64\s+and\s+follow",
+]
+
+
+def _sanitize_user_message(message: str) -> str:
+    """
+    Strip prompt injection patterns from user messages before they reach the LLM.
+    Returns the cleaned message. If the message contains malicious content,
+    returns a safe refusal prompt.
+    """
+    if not message:
+        return message
+
+    cleaned = message
+    injection_found = False
+
+    for pattern in INJECTION_PATTERNS:
+        if re.search(pattern, cleaned, re.IGNORECASE):
+            injection_found = True
+            cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
+
+    # If we stripped significant content and what's left is very short or empty,
+    # the message was likely entirely an injection attempt
+    if injection_found:
+        stripped = cleaned.strip()
+        if len(stripped) < 10:
+            return "I'm sorry, but I cannot process this request. I've detected patterns that resemble prompt injection attempts. I'm designed to help with veterinary clinic data queries — please ask me about your clinic's messages, reports, or donations."
+
+    # Second layer: check for malicious content in the remaining text
+    for pattern in MALICIOUS_CONTENT_PATTERNS:
+        if re.search(pattern, cleaned, re.IGNORECASE):
+            print(f"[GUARDRAIL] Malicious content pattern detected: '{pattern}'")
+            return "I'm sorry, but I cannot process this request. I've detected patterns that resemble prompt injection attempts. I'm designed to help with veterinary clinic data queries — please ask me about your clinic's messages, reports, or donations."
+
+    # Log injection attempts for monitoring (but still process the cleaned message)
+    if injection_found:
+        print(f"[GUARDRAIL] Prompt injection pattern detected and stripped from user message.")
+
+    return cleaned
+
 
 def logging_turns(
     db: Session,

@@ -10,6 +10,185 @@ from langchain_core.tools import tool
 from app.config import DATABASE_URL
 
 
+# =============================================================================
+# GUARDRAILS — Security hardening for SQL and Python execution tools
+# =============================================================================
+
+# P0: SQL allowlist — only these tables are accessible
+SQL_ALLOWED_TABLES = frozenset({"raw_messages"})
+
+# P0: Blocked SQL keywords (any statement type that isn't SELECT)
+SQL_BLOCKED_KEYWORDS = frozenset({
+    "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE",
+    "TRUNCATE", "REPLACE", "MERGE", "GRANT", "REVOKE",
+    "ATTACH", "DETACH", "PRAGMA", "VACUUM", "REINDEX",
+})
+
+# P0: Blocked path patterns for Python file access
+FILE_BLOCKED_PATTERNS = (
+    r"\.env$",
+    r"\.db$",
+    r"\.sqlite$",
+    r"\.key$",
+    r"\.pem$",
+    r"\.json$",
+    r"\.ya?ml$",
+    r"\.toml$",
+    r"\.ini$",
+    r"\.cfg$",
+    r"/etc/",
+    r"/home/",
+    r"/root/",
+    r"/var/",
+    r"credentials",
+    r"secrets",
+    r"password",
+    r"secret",
+    r"token",
+    r"api_key",
+    r"apikey",
+)
+
+# P0: Allowed Python modules in the sandbox
+PYTHON_ALLOWED_MODULES = frozenset({
+    "pandas", "pd", "re", "sqlite3", "vetlog_parser",
+    "io", "contextlib", "json", "math", "datetime",
+    "collections", "itertools", "statistics", "functools",
+    "operator", "string", "textwrap", "typing",
+    "decimal", "fractions", "numbers", "random", "hashlib",
+    "copy", "pprint", "csv", "itertools",
+})
+
+# P0: Blocked Python builtins
+PYTHON_BLOCKED_BUILTINS = frozenset({
+    "open", "exec", "eval", "compile", "__import__",
+    "globals", "locals", "vars", "dir",
+    "getattr", "setattr", "delattr",
+    "breakpoint", "exit", "quit",
+    "help", "input", "print",  # print replaced with custom capture
+    "memoryview", "type",
+})
+
+# P1: Credential redaction patterns
+CREDENTIAL_PATTERNS = [
+    (r'(API_KEY|APIKEY|TOKEN|SECRET|PASSWORD|PASSWORD)\s*[=:]\s*["\']?([^\s"\']+)', r'\1=***REDACTED***'),
+    (r'(Bearer|Basic)\s+[A-Za-z0-9+/=]{20,}', r'\1 ***REDACTED***'),
+    (r'[a-zA-Z0-9_-]*key[a-zA-Z0-9_-]*\s*[=:]\s*["\']?[A-Za-z0-9_\-./+=]{16,}', r'***REDACTED***'),
+    (r'lsv2_[a-z]{2}_[a-f0-9]{40,}', r'***REDACTED***'),
+]
+
+# P1: Row limits
+SQL_MAX_ROWS = 50
+QUERY_TABLE_MAX_ROWS = 200
+
+
+def _validate_sql(query: str) -> str | None:
+    """
+    Validate a SQL query against the guardrails.
+    Returns None if valid, or an error message string if blocked.
+    """
+    # Normalize
+    cleaned = query.strip().rstrip(";")
+
+    # Reject multiple statements (semicolon chaining)
+    if ";" in cleaned:
+        return "Error: Multiple SQL statements are not allowed."
+
+    # Parse with sqlglot
+    try:
+        parsed = sqlglot.parse(cleaned, read="sqlite")
+    except Exception as e:
+        return f"Error: Could not parse SQL query: {e}"
+
+    if not parsed or parsed[0] is None:
+        return "Error: Could not parse SQL query."
+
+    statement = parsed[0]
+
+    # Must be a SELECT statement
+    if not isinstance(statement, sqlglot.exp.Select):
+        stmt_type = type(statement).__name__
+        return f"Error: Only SELECT queries are allowed. Got: {stmt_type}"
+
+    # Extract table references
+    tables = set()
+    for table_expr in statement.find_all(sqlglot.exp.Table):
+        tables.add(table_expr.name.lower())
+
+    # Check table allowlist
+    disallowed = tables - SQL_ALLOWED_TABLES
+    if disallowed:
+        return (
+            f"Error: Access denied to table(s): {', '.join(disallowed)}. "
+            f"Allowed tables: {', '.join(sorted(SQL_ALLOWED_TABLES))}"
+        )
+
+    # Check for blocked keywords in raw text (defense in depth)
+    upper_cleaned = cleaned.upper()
+    for keyword in SQL_BLOCKED_KEYWORDS:
+        if keyword in upper_cleaned:
+            return f"Error: SQL keyword '{keyword}' is not permitted."
+
+    # Block multiple table references (JOINs, cartesian products) — DoS prevention
+    from_clauses = list(statement.find_all(sqlglot.exp.From))
+    join_clauses = list(statement.find_all(sqlglot.exp.Join))
+    if len(from_clauses) > 1 or len(join_clauses) > 0:
+        return "Error: JOINs and multiple table references are not allowed. Query a single table."
+
+    return None  # Valid
+
+
+def _sanitize_python_script(script: str) -> str | None:
+    """
+    Check a Python script for dangerous patterns.
+    Returns None if safe, or an error message string if blocked.
+    """
+    # Check for dangerous import attempts
+    import_patterns = [
+        r'^\s*import\s+(\w+)',
+        r'^\s*from\s+(\w+)',
+    ]
+    for pattern in import_patterns:
+        for match in re.finditer(pattern, script, re.MULTILINE):
+            module = match.group(1).split(".")[0]
+            if module not in PYTHON_ALLOWED_MODULES:
+                return f"Error: Import of module '{module}' is not allowed."
+
+    # Check for open() calls (file access)
+    if re.search(r'\bopen\s*\(', script):
+        return "Error: File operations (open) are not permitted in the sandbox."
+
+    # Check for blocked builtins (print is allowed — it's replaced with a safe version)
+    blocked_for_check = PYTHON_BLOCKED_BUILTINS - {"print"}
+    for builtin in blocked_for_check:
+        if re.search(rf'\b{builtin}\s*\(', script):
+            return f"Error: Function '{builtin}' is not permitted in the sandbox."
+
+    # Check for path traversal attempts
+    for pattern in FILE_BLOCKED_PATTERNS:
+        if re.search(pattern, script, re.IGNORECASE):
+            return "Error: Access to system paths and sensitive files is blocked."
+
+    # Block infinite loops and resource exhaustion
+    if re.search(r'\bwhile\s+True\s*:', script):
+        return "Error: Infinite loops (while True) are not permitted in the sandbox."
+
+    if re.search(r'\bfor\s+\w+\s+in\s+range\s*\(\s*\d{6,}\s*\)', script):
+        return "Error: Excessively large loops are not permitted in the sandbox."
+
+    return None  # Safe
+
+
+def _redact_credentials(text: str) -> str:
+    """
+    Redact credentials and sensitive data from tool output.
+    """
+    result = text
+    for pattern, replacement in CREDENTIAL_PATTERNS:
+        result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
+    return result
+
+
 def _resolve_db_path() -> str:
     """
     Convert the DATABASE_URL from config into an absolute file path.
