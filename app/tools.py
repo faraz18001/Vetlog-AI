@@ -26,31 +26,6 @@ SQL_BLOCKED_KEYWORDS = frozenset({
     "ATTACH", "DETACH", "PRAGMA", "VACUUM", "REINDEX",
 })
 
-# P0: Blocked path patterns for Python file access
-FILE_BLOCKED_PATTERNS = (
-    r"\.env$",
-    r"\.db$",
-    r"\.sqlite$",
-    r"\.key$",
-    r"\.pem$",
-    r"\.json$",
-    r"\.ya?ml$",
-    r"\.toml$",
-    r"\.ini$",
-    r"\.cfg$",
-    r"/etc/",
-    r"/home/",
-    r"/root/",
-    r"/var/",
-    r"credentials",
-    r"secrets",
-    r"password",
-    r"secret",
-    r"token",
-    r"api_key",
-    r"apikey",
-)
-
 # P0: Allowed Python modules in the sandbox
 PYTHON_ALLOWED_MODULES = frozenset({
     "pandas", "pd", "re", "sqlite3", "vetlog_parser", "app.vetlog_parser",
@@ -138,76 +113,6 @@ def _validate_sql(query: str) -> str | None:
         return "Error: JOINs and multiple table references are not allowed. Query a single table."
 
     return None  # Valid
-
-
-def _sanitize_python_script(script: str) -> str | None:
-    """
-    Check a Python script for dangerous patterns.
-    Returns None if safe, or an error message string if blocked.
-    """
-    # Check for dangerous import attempts
-    import_patterns = [
-        r'^\s*import\s+(\w+)',
-        r'^\s*from\s+(\w+)',
-    ]
-    for pattern in import_patterns:
-        for match in re.finditer(pattern, script, re.MULTILINE):
-            module = match.group(1).split(".")[0]
-            if module not in PYTHON_ALLOWED_MODULES:
-                return f"Error: Import of module '{module}' is not allowed."
-
-    # Check for open() calls (file access)
-    if re.search(r'\bopen\s*\(', script):
-        return "Error: File operations (open) are not permitted in the sandbox."
-
-    # Check for blocked builtins (print is allowed — it's replaced with a safe version)
-    blocked_for_check = PYTHON_BLOCKED_BUILTINS - {"print"}
-    for builtin in blocked_for_check:
-        if re.search(rf'\b{builtin}\s*\(', script):
-            return f"Error: Function '{builtin}' is not permitted in the sandbox."
-
-    # Check for path traversal attempts
-    for pattern in FILE_BLOCKED_PATTERNS:
-        if re.search(pattern, script, re.IGNORECASE):
-            return "Error: Access to system paths and sensitive files is blocked."
-
-    # Block dangerous introspection
-    if re.search(r'__builtins__', script):
-        return "Error: Access to __builtins__ is not permitted in the sandbox."
-
-    if re.search(r'__class__|__bases__|__subclasses__|__mro__|__globals__', script):
-        return "Error: Class hierarchy introspection is not permitted in the sandbox."
-
-    if re.search(r'__file__', script):
-        return "Error: Access to __file__ is not permitted in the sandbox."
-
-    if re.search(r'__dict__', script):
-        return "Error: Access to __dict__ is not permitted in the sandbox."
-
-    if re.search(r'vars\s*\(\s*\)', script):
-        return "Error: vars() is not permitted in the sandbox."
-
-    if re.search(r'type\s*\.__', script):
-        return "Error: Metaclass access is not permitted in the sandbox."
-
-    # Block infinite loops and resource exhaustion
-    if re.search(r'\bwhile\s+True\s*:', script):
-        return "Error: Infinite loops (while True) are not permitted in the sandbox."
-
-    if re.search(r'\bfor\s+\w+\s+in\s+range\s*\(\s*\d{6,}\s*\)', script):
-        return "Error: Excessively large loops are not permitted in the sandbox."
-
-    if re.search(r"\d{4,}\s*\*\*", script):
-        return "Error: Large exponentiation (memory bomb) is not permitted in the sandbox."
-
-    if re.search(r"['\"].?['\"]\s*\*\s*\d{4,}", script):
-        return "Error: Large string multiplication is not permitted in the sandbox."
-
-    # Block stack overflow via recursion
-    if re.search(r'\(\s*lambda\s+\w+\s*:\s*\w+\s*\(\s*\w+\s*\)\s*\)\s*\(\s*lambda', script):
-        return "Error: Recursive lambda patterns are not permitted in the sandbox."
-
-    return None  # Safe
 
 
 def _redact_credentials(text: str) -> str:
@@ -669,11 +574,6 @@ def execute_python_analytics(query: str, python_script: str) -> str:
     validation_error = _validate_sql(query)
     if validation_error:
         return validation_error
-
-    # Guardrail: Sanitize Python script before execution
-    sanitization_error = _sanitize_python_script(python_script)
-    if sanitization_error:
-        return sanitization_error
 
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row
