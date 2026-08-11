@@ -147,6 +147,48 @@
   box-shadow: none;
 }
 
+.sidebar-reports-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.sidebar--collapsed .sidebar-reports-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--radius-md);
+}
+
+.sidebar-reports-btn:hover {
+  color: var(--color-accent);
+  border-color: oklch(62% 0.20 295 / 0.28);
+  background: var(--color-accent-subtle);
+}
+
+.sidebar-reports-btn--active {
+  color: var(--color-accent);
+  border-color: oklch(62% 0.20 295 / 0.28);
+  background: var(--color-accent-subtle);
+}
+
 .sidebar-history {
   flex: 1;
   overflow-y: auto;

@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { MessageCirclePlus, MessageSquare, Settings, CircleUserRound, LogOut, PanelLeftClose, PanelLeftOpen, Cat } from "lucide-react";
+import { MessageCirclePlus, MessageSquare, Settings, CircleUserRound, LogOut, PanelLeftClose, PanelLeftOpen, FileText } from "lucide-react";
 import appLogo from "../assets/logo.png";
 import { motion } from "framer-motion";
 import * as Popover from "@radix-ui/react-popover";
 import "./Sidebar.css";
 
-export default function Sidebar({ isOpen, onToggle, onNewChat, isNewChatDisabled, onOpenSettings, onSelectThread, userId, userName, onLogout }) {
+export default function Sidebar({ isOpen, onToggle, onNewChat, isNewChatDisabled, onOpenSettings, onOpenReports, isReportsActive, onSelectThread, onBackToChat, userId, userName, onLogout }) {
   const [conversations, setConversations] = useState([]);
 
   useEffect(function () {
@@ -106,6 +106,16 @@ export default function Sidebar({ isOpen, onToggle, onNewChat, isNewChatDisabled
           >
             <MessageCirclePlus size={16} strokeWidth={2} />
             {isOpen && <span>New Chat</span>}
+          </button>
+
+          <button
+            className={"sidebar-reports-btn" + (isReportsActive ? " sidebar-reports-btn--active" : "")}
+            onClick={onOpenReports}
+            aria-label="View all reports"
+            title="Reports"
+          >
+            <FileText size={16} strokeWidth={2} />
+            {isOpen && <span>Reports</span>}
           </button>
         </div>
 

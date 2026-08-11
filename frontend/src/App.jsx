@@ -6,6 +6,7 @@ import InputBar from "./components/InputBar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import SettingsModal from "./components/SettingsModal.jsx";
 import LoginPage from "./components/LoginPage.jsx";
+import ReportsPage from "./components/ReportsPage.jsx";
 import { Menu } from "lucide-react";
 import "./App.css";
 
@@ -16,6 +17,7 @@ export default function App() {
   const { messages, isLoading, sendMessage, clearChat, loadThread, sessionUsage } = useChat();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [currentView, setCurrentView] = useState("chat");
 
   useEffect(function () {
     if (!user) return;
@@ -51,13 +53,16 @@ export default function App() {
       {/* Global paper-grain texture overlay */}
       <div className="grain-overlay" aria-hidden="true" />
 
-      <Sidebar 
+      <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        onNewChat={clearChat} 
-        isNewChatDisabled={messages.length === 0 && !isLoading} 
+        onNewChat={clearChat}
+        isNewChatDisabled={messages.length === 0 && !isLoading}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenReports={() => setCurrentView("reports")}
+        isReportsActive={currentView === "reports"}
         onSelectThread={loadThread}
+        onBackToChat={() => setCurrentView("chat")}
         userId={user.user_id}
         userName={user.display_name}
         onLogout={logout}
@@ -70,23 +75,30 @@ export default function App() {
       />
       
       <div className="app-content">
-        {/* ---- Topbar ---- */}
-        <header className="topbar">
-
-
-          <div className="topbar-right">
-          </div>
-        </header>
-
-        {/* ---- Chat body ---- */}
-        <main className="chat-main">
-          <ChatWindow
-            messages={messages}
-            isLoading={isLoading}
-            onPrompt={sendMessage}
+        {currentView === "reports" ? (
+          <ReportsPage
+            userId={user.user_id}
+            onBackToChat={() => setCurrentView("chat")}
           />
-          <InputBar onSend={sendMessage} isLoading={isLoading} />
-        </main>
+        ) : (
+          <>
+            {/* ---- Topbar ---- */}
+            <header className="topbar">
+              <div className="topbar-right">
+              </div>
+            </header>
+
+            {/* ---- Chat body ---- */}
+            <main className="chat-main">
+              <ChatWindow
+                messages={messages}
+                isLoading={isLoading}
+                onPrompt={sendMessage}
+              />
+              <InputBar onSend={sendMessage} isLoading={isLoading} />
+            </main>
+          </>
+        )}
       </div>
     </div>
   );
