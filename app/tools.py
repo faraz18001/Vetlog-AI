@@ -53,7 +53,7 @@ FILE_BLOCKED_PATTERNS = (
 
 # P0: Allowed Python modules in the sandbox
 PYTHON_ALLOWED_MODULES = frozenset({
-    "pandas", "pd", "re", "sqlite3", "vetlog_parser",
+    "pandas", "pd", "re", "sqlite3", "vetlog_parser", "app.vetlog_parser",
     "io", "contextlib", "json", "math", "datetime",
     "collections", "itertools", "statistics", "functools",
     "operator", "string", "textwrap", "typing",
@@ -681,9 +681,15 @@ def execute_python_analytics(query: str, python_script: str) -> str:
         def _safe_print(*args, **kwargs):
             _output_buffer.append(" ".join(str(a) for a in args))
 
+        import app.vetlog_parser as _vetlog_parser
+
         local_env = {
             "rows": rows,
             "re": _re,
+            "vetlog_parser": _vetlog_parser,
+            "extract_money": _vetlog_parser.extract_money,
+            "extract_donor": _vetlog_parser.extract_donor,
+            "is_expenditure": _vetlog_parser.is_expenditure,
             "Counter": _collections.Counter,
             "collections": _collections,
             "json": _json,
