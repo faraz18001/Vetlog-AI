@@ -1,10 +1,12 @@
 import contextlib
 import io
 import os
+import re
 import sqlite3
 from datetime import datetime
 from urllib.parse import urlparse
 
+import sqlglot
 from langchain_core.tools import tool
 
 from app.config import DATABASE_URL
