@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Cat } from "lucide-react";
 import appLogo from "../assets/logo.png";
 import MessageBubble from "./MessageBubble.jsx";
+import InputBar from "./InputBar.jsx";
 
 const SUGGESTED = [
   "Who was treated today?",
@@ -11,7 +12,7 @@ const SUGGESTED = [
   "Any animals with ongoing treatment?",
 ];
 
-function EmptyState({ onPrompt }) {
+function EmptyState({ onSend, isLoading }) {
   return (
     <div className="chat-empty">
       <motion.div
@@ -38,41 +39,25 @@ function EmptyState({ onPrompt }) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.16 }}
+        style={{ marginBottom: "2rem" }}
       >
         Ask me anything about your patients, treatments, or clinic activity.
         I query your records directly.
       </motion.p>
 
-      <ul className="chat-prompts" role="list">
-        {SUGGESTED.map((prompt, i) => (
-          <motion.li
-            key={prompt}
-            role="listitem"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.45,
-              ease: [0.16, 1, 0.3, 1],
-              delay: 0.24 + i * 0.07,
-            }}
-          >
-            <button
-              className="chat-prompt-btn"
-              onClick={() => onPrompt(prompt)}
-            >
-              <span>{prompt}</span>
-              <span className="chat-prompt-arrow" aria-hidden="true">
-                <ArrowRight size={15} strokeWidth={2.5} />
-              </span>
-            </button>
-          </motion.li>
-        ))}
-      </ul>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.24 }}
+        style={{ width: "100%", maxWidth: "800px" }}
+      >
+        <InputBar onSend={onSend} isLoading={isLoading} />
+      </motion.div>
     </div>
   );
 }
 
-export default function ChatWindow({ messages, isLoading, onPrompt }) {
+export default function ChatWindow({ messages, isLoading, onPrompt, onSend }) {
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -87,7 +72,7 @@ export default function ChatWindow({ messages, isLoading, onPrompt }) {
       aria-label="Chat messages"
     >
       {messages.length === 0 ? (
-        <EmptyState onPrompt={onPrompt} />
+        <EmptyState onSend={onSend} isLoading={isLoading} />
       ) : (
         <div className="chat-messages">
           {messages.map((msg) => (

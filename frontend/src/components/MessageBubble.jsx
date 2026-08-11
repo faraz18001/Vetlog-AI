@@ -71,6 +71,10 @@ function CopyButton({ text }) {
 function MessageBubble({ message }) {
   const { role, content, isStreaming, isError, timestamp, steps } = message;
   const isUser = role === "user";
+  const [showAllSteps, setShowAllSteps] = useState(false);
+  const totalSteps = steps ?? [];
+  const visibleSteps = showAllSteps ? totalSteps : totalSteps.slice(0, 4);
+  const hiddenCount = totalSteps.length - visibleSteps.length;
 
   const timeLabel = timestamp
     ? timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -106,8 +110,8 @@ function MessageBubble({ message }) {
         {/* ChainOfThought — shown for AI messages that triggered tool calls, or initially while thinking */}
         {!isUser && (steps?.length > 0 || (isStreaming && !content)) && (
           <ChainOfThought>
-            {(steps ?? []).map((step, i) => (
-              <ChainOfThoughtStep key={i} defaultOpen={isStreaming && i === (steps ?? []).length - 1}>
+            {visibleSteps.map((step, i) => (
+              <ChainOfThoughtStep key={i} defaultOpen={isStreaming && i === visibleSteps.length - 1}>
                 <ChainOfThoughtTrigger>
                   {step.label}
                 </ChainOfThoughtTrigger>
@@ -120,6 +124,20 @@ function MessageBubble({ message }) {
                 )}
               </ChainOfThoughtStep>
             ))}
+            {hiddenCount > 0 && !showAllSteps && (
+              <div className="chain-of-thought-step">
+                <div className="chain-of-thought-timeline">
+                  <div className="chain-of-thought-dot" style={{ display: 'none' }} />
+                </div>
+                <button 
+                  onClick={() => setShowAllSteps(true)}
+                  className="chain-of-thought-trigger-text" 
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-accent)', padding: '4px 0', fontSize: '0.85rem', fontWeight: 600, textAlign: 'left', outline: 'none', width: '100%' }}
+                >
+                  + Show {hiddenCount} more steps
+                </button>
+              </div>
+            )}
             {isStreaming && (
               <div className="chain-of-thought-step">
                 <div className="chain-of-thought-timeline">

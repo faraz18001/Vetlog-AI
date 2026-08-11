@@ -32,9 +32,9 @@ export default {
         "vet-card": "oklch(15% 0.008 280)"
       },
       "borderRadius": {
-        "DEFAULT": "0.25rem",
-        "lg": "0.5rem",
-        "xl": "0.75rem",
+        "DEFAULT": "0.5rem",
+        "lg": "1rem",
+        "xl": "1.25rem",
         "full": "9999px"
       },
       "spacing": {

@@ -94,8 +94,11 @@ export default function App() {
                 messages={messages}
                 isLoading={isLoading}
                 onPrompt={sendMessage}
+                onSend={sendMessage}
               />
-              <InputBar onSend={sendMessage} isLoading={isLoading} />
+              {messages.length > 0 && (
+                <InputBar onSend={sendMessage} isLoading={isLoading} />
+              )}
             </main>
           </>
         )}
