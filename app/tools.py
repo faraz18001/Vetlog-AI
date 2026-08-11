@@ -171,12 +171,41 @@ def _sanitize_python_script(script: str) -> str | None:
         if re.search(pattern, script, re.IGNORECASE):
             return "Error: Access to system paths and sensitive files is blocked."
 
+    # Block dangerous introspection
+    if re.search(r'__builtins__', script):
+        return "Error: Access to __builtins__ is not permitted in the sandbox."
+
+    if re.search(r'__class__|__bases__|__subclasses__|__mro__|__globals__', script):
+        return "Error: Class hierarchy introspection is not permitted in the sandbox."
+
+    if re.search(r'__file__', script):
+        return "Error: Access to __file__ is not permitted in the sandbox."
+
+    if re.search(r'__dict__', script):
+        return "Error: Access to __dict__ is not permitted in the sandbox."
+
+    if re.search(r'vars\s*\(\s*\)', script):
+        return "Error: vars() is not permitted in the sandbox."
+
+    if re.search(r'type\s*\.__', script):
+        return "Error: Metaclass access is not permitted in the sandbox."
+
     # Block infinite loops and resource exhaustion
     if re.search(r'\bwhile\s+True\s*:', script):
         return "Error: Infinite loops (while True) are not permitted in the sandbox."
 
     if re.search(r'\bfor\s+\w+\s+in\s+range\s*\(\s*\d{6,}\s*\)', script):
         return "Error: Excessively large loops are not permitted in the sandbox."
+
+    if re.search(r"\d{4,}\s*\*\*", script):
+        return "Error: Large exponentiation (memory bomb) is not permitted in the sandbox."
+
+    if re.search(r"['\"].?['\"]\s*\*\s*\d{4,}", script):
+        return "Error: Large string multiplication is not permitted in the sandbox."
+
+    # Block stack overflow via recursion
+    if re.search(r'\(\s*lambda\s+\w+\s*:\s*\w+\s*\(\s*\w+\s*\)\s*\)\s*\(\s*lambda', script):
+        return "Error: Recursive lambda patterns are not permitted in the sandbox."
 
     return None  # Safe
 

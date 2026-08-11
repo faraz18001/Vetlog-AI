@@ -154,18 +154,43 @@ def test_sql_guardrails(name, query):
 
 # Python sandbox escape test cases
 PYTHON_ESCAPE_CASES = [
+    # Import escapes
     ("import_os", "import os\nos.listdir('/home')"),
     ("import_socket", "import socket\ns = socket.socket()"),
-    ("open_env", "with open('.env') as f:\n    print(f.read())"),
     ("import_subprocess", "import subprocess\nsubprocess.run(['ls'])"),
+    ("import_importlib", "import importlib\nos = importlib.import_module('os')\nprint(os.getcwd())"),
     ("__import__", "__import__('os').system('id')"),
-    ("eval_attack", "eval('__import__(\"os\").system(\"ls\")')"),
-    ("exec_attack", "exec('import os')"),
-    ("globals_leak", "print(globals())"),
+    ("builtins_import", "import builtins\nreal_import = builtins.__import__\nos = real_import('os')\nprint(os.listdir('/'))"),
+    # File access
+    ("open_env", "with open('.env') as f:\n    print(f.read())"),
+    ("open_etc_passwd", "print(open('/etc/passwd').read())"),
+    ("open_config", "print(open('app/config.py').read())"),
+    ("open_agent", "print(open('app/agent.py').read())"),
+    ("open_db", "print(open('data/vetlog.db', 'rb').read()[:100])"),
     ("pandas_csv", "import pandas as pd\ndf = pd.read_csv('/home/syedfaraz/Projects/Vetlog/.env')\nprint(df)"),
     ("sqlite_file", "import sqlite3\nconn = sqlite3.connect('/home/syedfaraz/Projects/Vetlog/.env')"),
+    # Sandbox introspection
+    ("dir_dump", "print(dir())"),
+    ("vars_dump", "print(vars())"),
+    ("globals_dump", "print(globals())"),
+    ("builtins_dump", "print(__builtins__.__dict__.keys())"),
+    ("sys_path", "print(__import__('sys').path)"),
+    # Class hierarchy traversal
+    ("class_traversal", "[x for x in ().__class__.__bases__[0].__subclasses__() if 'os' in str(x)]"),
+    ("popen_attack", "[x for x in ().__class__.__bases__[0].__subclasses__() if x.__name__ == 'Popen'][0]('ls')"),
+    # Resource exhaustion
     ("infinite_loop", "while True:\n    x = 1"),
     ("large_loop", "for i in range(99999999):\n    pass"),
+    ("memory_bomb", "x = 'A' * (1024**3)"),
+    ("stack_overflow", "(lambda f: f(f))(lambda f: f(f))"),
+    # Advanced escapes
+    ("eval_attack", "eval(\"__import__('os').popen('id').read()\")"),
+    ("exec_compile", "exec(compile(open('.env').read(), '.env', 'exec'))"),
+    ("metaclass_attack", "print([x.__name__ for x in type.__bases__[0].__subclasses__(type)])"),
+    # Via vetlog_parser
+    ("vetlog_dir", "print(dir(vetlog_parser))"),
+    ("vetlog_file", "print(vetlog_parser.__file__)"),
+    ("sys_modules", "import sys\nprint(sys.modules['app.vetlog_parser'].__file__)"),
 ]
 
 

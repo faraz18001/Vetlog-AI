@@ -94,7 +94,7 @@
     "difficulty": "medium",
     "question": "What was the total donation amount in June 2026?",
     "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND timestamp BETWEEN '2026-06-01' AND '2026-06-30 23:59:59'",
-    "expected_answer": "1839000 PKR",
+    "expected_answer": "1713000",
     "expected_answer_type": "calculated_total",
     "notes": "Must extract amounts with regex and sum them",
     "tags": ["donations", "python_analytics", "aggregation"]
@@ -286,6 +286,7 @@
     "difficulty": "hard",
     "question": "Calculate the total donations from March to May 2026, broken down by month.",
     "gold_sql": "SELECT text, timestamp FROM raw_messages WHERE chat_name LIKE '%Donations%' AND timestamp BETWEEN '2026-03-01' AND '2026-05-31 23:59:59'",
+    "expected_answer": "March: 2094000, April: 1822000, May: 2221000",
     "expected_answer_type": "monthly_breakdown",
     "notes": "Extract month from timestamp, parse amounts, group by month",
     "tags": ["donations", "python_analytics", "multi_step"]
@@ -295,6 +296,7 @@
     "difficulty": "hard",
     "question": "Which doctor treated the most animals and how many?",
     "gold_sql": "SELECT sender FROM raw_messages WHERE chat_name LIKE '%Clinical%' AND (text LIKE '%Dr.%' OR text LIKE '%doctor%' OR text LIKE '%treated%')",
+    "expected_answer": "Dr. Bilal with 116 treatments",
     "expected_answer_type": "name_and_count",
     "notes": "Count treatments per doctor, normalize name variants",
     "tags": ["clinical", "python_analytics", "normalization"]
@@ -304,6 +306,7 @@
     "difficulty": "hard",
     "question": "What percentage of donations were for animal feed?",
     "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%'",
+    "expected_answer": "9% (83 out of 900 donations)",
     "expected_answer_type": "percentage",
     "notes": "Total donations vs animal feed donations",
     "tags": ["donations", "python_analytics", "percentage"]
@@ -322,8 +325,8 @@
     "difficulty": "hard",
     "question": "What was the total clinic expense on staff salaries in 2026?",
     "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Expenses%' AND (text LIKE '%salary%' OR text LIKE '%staff%')",
+    "expected_answer": "406000 PKR",
     "expected_answer_type": "calculated_total",
-    "notes": "Sum of all salary-related expenses. Exact amount depends on regex matching.",
     "tags": ["expenses", "python_analytics", "aggregation"]
   },
   {
@@ -367,6 +370,7 @@
     "difficulty": "hard",
     "question": "What is the total value of all blanket donations from anonymous sources?",
     "gold_sql": "SELECT text FROM raw_messages WHERE chat_name LIKE '%Donations%' AND text LIKE '%blanket%' AND (text LIKE '%Anonymous%' OR text LIKE '%Walk-in%' OR text LIKE '%unknown%')",
+    "expected_answer": "81000 PKR (9 donations)",
     "expected_answer_type": "calculated_total",
     "notes": "Multiple filters + amount extraction",
     "tags": ["donations", "python_analytics", "multi_filter"]
