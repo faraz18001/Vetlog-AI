@@ -59,6 +59,7 @@ function StepNode({ label, isLast, isStreaming }) {
  */
 export default function StepChain({ steps, isStreaming }) {
   const [expanded, setExpanded] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   if (steps.length === 0 && !isStreaming) return null;
 
@@ -116,31 +117,36 @@ export default function StepChain({ steps, isStreaming }) {
   }
 
   /* ── Expanded vertical timeline ─────────────────────────────────── */
+  const MAX_VISIBLE = 4;
+  const hasMore = !showAll && steps.length > MAX_VISIBLE;
+  const visibleSteps = hasMore ? steps.slice(0, MAX_VISIBLE) : steps;
+  const hiddenCount = steps.length - MAX_VISIBLE;
+
   return (
     <motion.div layout className="steps-chain">
       <AnimatePresence>
-        {steps.map((step, i) => {
-          const isLast = i === steps.length - 1;
-          const showConnector = !isLast || isStreaming;
+        {visibleSteps.map((step, i) => {
+          const realIndex = i;
+          const isLast = realIndex === steps.length - 1;
+          const isVisibleLast = i === visibleSteps.length - 1;
+          const showConnector = (!isVisibleLast || hasMore) || (!isLast && !hasMore) || isStreaming;
           const isError =
             step.label.includes("failed") || step.label.includes("error");
 
           return (
             <motion.div
-              key={i}
+              key={realIndex}
               layout
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               className="step-row"
             >
-              {/* Left column: node + connector line */}
               <div className="step-track">
                 <StepNode label={step.label} isLast={isLast} isStreaming={false} />
                 {showConnector && <span className="step-connector" />}
               </div>
 
-              {/* Right column: label + optional detail */}
               <div className="step-label-col">
                 <span
                   className={`step-label${isError ? " step-label--error" : ""}`}
@@ -155,7 +161,6 @@ export default function StepChain({ steps, isStreaming }) {
           );
         })}
 
-        {/* Animated pulse node while the agent is still working */}
         {isStreaming && (
           <motion.div
             layout
@@ -179,13 +184,27 @@ export default function StepChain({ steps, isStreaming }) {
         )}
       </AnimatePresence>
 
-      {!isStreaming && steps.length > 0 && (
+      {hasMore && !isStreaming && (
+        <motion.button
+          layout
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="steps-show-all-btn"
+          onClick={() => setShowAll(true)}
+          aria-label={`Show all ${steps.length} steps`}
+        >
+          Show all {steps.length} steps
+          {hiddenCount > 0 && ` (${hiddenCount} more)`}
+        </motion.button>
+      )}
+
+      {!hasMore && !isStreaming && steps.length > 0 && (
         <motion.button
           layout
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="steps-collapse-btn"
-          onClick={() => setExpanded(false)}
+          onClick={() => { setExpanded(false); setShowAll(false); }}
           aria-label="Collapse steps"
         >
           Collapse
